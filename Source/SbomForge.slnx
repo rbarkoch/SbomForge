@@ -1,4 +1,11 @@
 <Solution>
+  <Folder Name="/ExampleDeployment/">
+    <Project Path="ExampleDeployment/ExampleClassLibrary1/ExampleClassLibrary1.csproj" />
+    <Project Path="ExampleDeployment/ExampleClassLibrary2/ExampleClassLibrary2.csproj" />
+    <Project Path="ExampleDeployment/ExampleConsoleApp1/ExampleConsoleApp1.csproj" />
+    <Project Path="ExampleDeployment/ExampleConsoleApp2/ExampleConsoleApp2.csproj" />
+    <Project Path="ExampleDeployment/ExampleSbom/ExampleSbom.csproj" />
+  </Folder>
   <Project Path="SbomForge.Example/SbomForge.Example.csproj" />
   <Project Path="SbomForge.Sbom/SbomForge.Sbom.csproj" />
   <Project Path="SbomForge/SbomForge.csproj" />
