@@ -4,23 +4,36 @@ using SbomForge;
 // ---------------------------------------------------------------------------
 // Scenario 1: Single project — simplest usage
 //
-// ForProject() automatically treats the .csproj as a single executable.
-// We just set metadata and output options, then build.
+// AddBasePath() sets the root directory, then AddProject() with a relative
+// path declares the project and returns a ProjectBuilder for configuration.
 // ---------------------------------------------------------------------------
 
 Console.WriteLine("=== Scenario 1: Single Project SBOM ===\n");
 
+var basePath = Path.GetFullPath(
+    Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
+
 var singleResult = await SbomBuilder
-    .ForProject(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "SbomForge", "SbomForge.csproj"))
-    .WithMetadata(m =>
+    .AddBasePath(basePath)
+    .AddProject("SbomForge/SbomForge.csproj")
+        .WithVersion("1.0.0")
+        .WithMetadata(meta =>
+        {
+            meta.BomRef = "pkg:nuget/SbomForge@1.0.0";
+            meta.Purl = "pkg:nuget/SbomForge@1.0.0";
+            meta.Supplier = new OrganizationalEntity { Name = "SbomForge Contributors" };
+            meta.Copyright = $"Copyright (c) {DateTime.UtcNow.Year} SbomForge Contributors";
+            meta.Type = Component.Classification.Library;
+        })
+    .WithResolution(res =>
     {
-        m.Supplier = new OrganizationalEntity { Name = "SbomForge Contributors" };
-        m.Copyright = $"Copyright (c) {DateTime.UtcNow.Year} SbomForge Contributors";
+        res.IncludeTransitive = true;
     })
     .WithOutput(o =>
     {
         o.OutputDirectory = Path.Combine(AppContext.BaseDirectory, "sbom-output");
         o.Format = SbomFormat.CycloneDxJson;
+        o.FileNameTemplate = "{ProjectName}.sbom.json";
     })
     .BuildAsync();
 
@@ -33,30 +46,37 @@ Console.WriteLine($"  Components: {bom.Components?.Count ?? 0}");
 Console.WriteLine();
 
 // ---------------------------------------------------------------------------
-// Scenario 2: Multi-executable with filters
+// Scenario 2: Multiple projects with per-project metadata and filters
 //
-// Demonstrates AddExecutable() with IncludesProject(), per-executable
-// metadata overrides, and package exclusion filters.
+// Each AddProject() returns a ProjectBuilder, allowing per-project version
+// and metadata. When projects reference each other, the generated SBOMs
+// use the configured BomRef and Purl for cross-references.
 // ---------------------------------------------------------------------------
 
-Console.WriteLine("=== Scenario 2: Multi-Executable with Filters ===\n");
-
-// For this demo we use the same project twice to simulate two executables
-var projectPath = Path.GetFullPath(
-    Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "SbomForge", "SbomForge.csproj"));
+Console.WriteLine("=== Scenario 2: Multiple Projects with Filters ===\n");
 
 var multiResult = await SbomBuilder
-    .ForSolution(Path.GetFullPath(
-        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "SbomForge.slnx")))
-    .WithMetadata(meta =>
-    {
-        meta.Supplier = new OrganizationalEntity { Name = "Acme Corp" };
-        meta.Manufacturer = new OrganizationalEntity { Name = "Acme Corp" };
-        meta.Copyright = $"Copyright (c) {DateTime.UtcNow.Year} Acme Corp";
-    })
-    .AddExecutable("LibrarySbom", exec => exec
-        .FromProject("SbomForge/SbomForge.csproj")
-        .WithVersion("1.0.0"))
+    .AddBasePath(basePath)
+    .AddProject("SbomForge/SbomForge.csproj")
+        .WithVersion("1.0.0")
+        .WithMetadata(meta =>
+        {
+            meta.BomRef = "pkg:nuget/SbomForge@1.0.0";
+            meta.Purl = "pkg:nuget/SbomForge@1.0.0";
+            meta.Supplier = new OrganizationalEntity { Name = "Acme Corp" };
+            meta.Copyright = $"Copyright (c) {DateTime.UtcNow.Year} Acme Corp";
+            meta.Type = Component.Classification.Library;
+        })
+    .AddProject("SbomForge.Sbom/SbomForge.Sbom.csproj")
+        .WithVersion("1.0.0")
+        .WithMetadata(meta =>
+        {
+            meta.BomRef = "pkg:nuget/SbomForge.Sbom@1.0.0";
+            meta.Purl = "pkg:nuget/SbomForge.Sbom@1.0.0";
+            meta.Supplier = new OrganizationalEntity { Name = "Acme Corp" };
+            meta.Copyright = $"Copyright (c) {DateTime.UtcNow.Year} Acme Corp";
+            meta.Type = Component.Classification.Application;
+        })
     .WithFilters(filter =>
     {
         filter.ExcludeTestProjects = true;
@@ -70,8 +90,7 @@ var multiResult = await SbomBuilder
     {
         o.OutputDirectory = Path.Combine(AppContext.BaseDirectory, "sbom-output");
         o.Format = SbomFormat.CycloneDxJson;
-        o.Scope = SbomScope.Both;
-        o.FileNameTemplate = "{ExecutableName}-{Version}-sbom.json";
+        o.FileNameTemplate = "{ProjectName}-{Version}-sbom.json";
     })
     .BuildAsync();
 
@@ -81,9 +100,6 @@ foreach (var path in multiResult.WrittenFilePaths)
 
 foreach (var (name, execBom) in multiResult.Boms)
     Console.WriteLine($"  {name}: {execBom.Components?.Count ?? 0} components");
-
-if (multiResult.SolutionBom is not null)
-    Console.WriteLine($"  Solution BOM: {multiResult.SolutionBom.Components?.Count ?? 0} components");
 
 Console.WriteLine();
 Console.WriteLine("Done.");
