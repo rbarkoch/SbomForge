@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net48;net8.0;net9.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- Package Metadata -->
+    
+    <Product>SbomForge</Product>
+    <Description>A .NET library for generating consistent Software Bill of Materials (SBOM) files.</Description>
+    
+    <!-- License -->
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+
+    <!-- URLs -->
+    <PackageProjectUrl>https://github.com/rbarkoch/SbomForge</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/rbarkoch/SbomForge</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+
+    <!-- Package Configuration -->
+    <PackageTags>sbom;cyclonedx;security;dependencies;bill-of-materials;supply-chain</PackageTags>
+
+    <!-- Build Configuration -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CycloneDX.Core"
+                      Version="11.0.0" />
+    <PackageReference Include="Nuget.ProjectModel"
+                      Version="7.3.0" />
+  </ItemGroup>
+
+</Project>

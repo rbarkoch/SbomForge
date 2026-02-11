@@ -1,0 +1,8 @@
+<Project>
+    <PropertyGroup>
+        <Authors>Ronnie Bar-Kochba</Authors>
+        <Copyright>Copyright (c) $([System.DateTime]::UtcNow.Year) Ronnie Bar-Kochba</Copyright>
+        
+        <LangVersion>latest</LangVersion>
+    </PropertyGroup>
+</Project>

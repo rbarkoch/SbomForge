@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <!-- Override default metadata for example projects -->
+    <Company>Example Corp</Company>
+    <Copyright>Copyright (c) 2026 Example Corp</Copyright>
+  </PropertyGroup>
+</Project>

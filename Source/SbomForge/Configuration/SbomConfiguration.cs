@@ -1,0 +1,24 @@
+namespace SbomForge.Configuration;
+
+public class SbomConfiguration
+{
+    /// <summary>
+    /// Metadata for the resulting component. May be an override for global component properties.
+    /// </summary>
+    public ComponentConfiguration Component { get; } = new();
+
+    /// <summary>
+    /// Properties indicating how the SBOM should be resolved. May be an override for global resolution properties.
+    /// </summary>
+    public ResolutionConfiguration Resolution { get; } = new();
+
+    /// <summary>
+    /// Properties indicating how to filter some data from the SBOM. May be an override for global filter properties.
+    /// </summary>
+    public FiltersConfiguration Filters { get; } = new();
+
+    /// <summary>
+    /// Properties indicating how to output the SBOM. May be an override for global output properties.
+    /// </summary>
+    public OutputConfiguration Output { get; } = new();
+}
