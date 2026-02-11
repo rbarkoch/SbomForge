@@ -3,7 +3,7 @@ using NuGet.ProjectModel;
 namespace SbomForge;
 
 /// <summary>
-/// Represents a resolved package in the dependency graph.
+/// Represents a resolved NuGet package in the dependency graph.
 /// </summary>
 public record ResolvedPackage
 {
@@ -18,61 +18,51 @@ public record ResolvedPackage
 }
 
 /// <summary>
-/// The full resolved dependency graph for an executable.
+/// Represents a project-to-project reference discovered in the lock file.
+/// </summary>
+public record ResolvedProjectReference
+{
+    public required string Name { get; init; }
+    public string? ResolvedPath { get; init; }
+    public List<string> DependsOn { get; init; } = [];
+}
+
+/// <summary>
+/// The full resolved dependency graph for a project, including both
+/// NuGet packages and project-to-project references.
 /// </summary>
 public class DependencyGraph
 {
-    public required string ExecutableName { get; init; }
+    public required string ProjectName { get; init; }
     public List<ResolvedPackage> Packages { get; set; } = [];
-    public List<string> SourceProjectPaths { get; init; } = [];
+    public List<ResolvedProjectReference> ProjectReferences { get; set; } = [];
+    public string SourceProjectPath { get; init; } = "";
 }
 
 /// <summary>
 /// Reads project.assets.json (the NuGet lock file written by <c>dotnet restore</c>)
 /// to build the dependency graph using NuGet.ProjectModel — no MSBuild invocation required.
+/// Also extracts project-to-project references so they can be cross-linked with
+/// configured project metadata.
 /// </summary>
 internal sealed class DependencyResolver(DependencyResolutionOptions options)
 {
-    public Task<DependencyGraph> ResolveAsync(ExecutableDefinition executable)
+    public Task<DependencyGraph> ResolveAsync(ProjectDefinition project)
     {
         var graph = new DependencyGraph
         {
-            ExecutableName = executable.Name,
+            ProjectName = project.Name,
+            SourceProjectPath = project.ProjectPath,
         };
 
-        // Collect all project paths that feed into this executable
-        var projectPaths = new List<string>();
-        if (executable.ProjectPath is not null)
-            projectPaths.Add(executable.ProjectPath);
-        projectPaths.AddRange(executable.IncludedProjectPaths);
+        var (packages, projectRefs) = ReadAssetsFile(project.ProjectPath);
+        graph.Packages = packages;
+        graph.ProjectReferences = projectRefs;
 
-        var allPackages = new Dictionary<string, ResolvedPackage>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var projectPath in projectPaths)
-        {
-            graph.SourceProjectPaths.Add(projectPath);
-            var packages = ReadAssetsFile(projectPath);
-
-            // Merge packages — if same package appears across projects,
-            // keep the higher version (simple conflict resolution strategy)
-            foreach (var pkg in packages)
-            {
-                if (!allPackages.TryGetValue(pkg.Id, out var existing))
-                {
-                    allPackages[pkg.Id] = pkg;
-                }
-                else if (IsHigherVersion(pkg.Version, existing.Version))
-                {
-                    allPackages[pkg.Id] = pkg;
-                }
-            }
-        }
-
-        graph.Packages = [.. allPackages.Values];
         return Task.FromResult(graph);
     }
 
-    private List<ResolvedPackage> ReadAssetsFile(string projectPath)
+    private (List<ResolvedPackage>, List<ResolvedProjectReference>) ReadAssetsFile(string projectPath)
     {
         var projectDir = Path.GetDirectoryName(projectPath)
             ?? throw new InvalidOperationException($"Cannot determine directory for: {projectPath}");
@@ -91,50 +81,72 @@ internal sealed class DependencyResolver(DependencyResolutionOptions options)
         return ParseLockFile(lockFile, projectPath);
     }
 
-    private List<ResolvedPackage> ParseLockFile(LockFile lockFile, string projectPath)
+    private (List<ResolvedPackage>, List<ResolvedProjectReference>) ParseLockFile(
+        LockFile lockFile, string projectPath)
     {
         var packages = new Dictionary<string, ResolvedPackage>(StringComparer.OrdinalIgnoreCase);
+        var projectRefs = new List<ResolvedProjectReference>();
+        var projectDir = Path.GetDirectoryName(projectPath) ?? ".";
 
         // Select the correct target framework
         var target = ResolveTarget(lockFile);
         if (target is null)
-            return [];
+            return ([], []);
 
         // Precompute direct dependency names from the project spec
         var directDependencyNames = GetDirectDependencyNames(lockFile);
 
         foreach (var library in target.Libraries)
         {
-            // Only include NuGet packages, not project references
-            if (!string.Equals(library.Type, "package", StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            var pkg = new ResolvedPackage
+            if (string.Equals(library.Type, "package", StringComparison.OrdinalIgnoreCase))
             {
-                Id = library.Name!,
-                Version = library.Version?.ToNormalizedString() ?? "0.0.0",
-                IsDirect = directDependencyNames.Contains(library.Name!),
-                DependsOn = options.IncludeTransitive
-                    ? [.. library.Dependencies.Select(d => d.Id)]
-                    : [],
-            };
+                var pkg = new ResolvedPackage
+                {
+                    Id = library.Name!,
+                    Version = library.Version?.ToNormalizedString() ?? "0.0.0",
+                    IsDirect = directDependencyNames.Contains(library.Name!),
+                    DependsOn = options.IncludeTransitive
+                        ? [.. library.Dependencies.Select(d => d.Id)]
+                        : [],
+                };
 
-            // Enrich from the libraries section (contains content hash, path info)
-            if (lockFile.Libraries
-                .FirstOrDefault(l => string.Equals(l.Name, library.Name, StringComparison.OrdinalIgnoreCase)
-                                     && l.Version == library.Version) is { } libraryInfo)
-            {
-                pkg = pkg with { PackageHash = libraryInfo.Sha512 };
+                // Enrich from the libraries section (contains content hash, path info)
+                if (lockFile.Libraries
+                    .FirstOrDefault(l => string.Equals(l.Name, library.Name, StringComparison.OrdinalIgnoreCase)
+                                         && l.Version == library.Version) is { } libraryInfo)
+                {
+                    pkg = pkg with { PackageHash = libraryInfo.Sha512 };
+                }
+
+                packages[pkg.Id!] = pkg;
             }
+            else if (string.Equals(library.Type, "project", StringComparison.OrdinalIgnoreCase))
+            {
+                // Find the library entry to resolve the project path
+                var libInfo = lockFile.Libraries
+                    .FirstOrDefault(l => string.Equals(l.Name, library.Name, StringComparison.OrdinalIgnoreCase)
+                                         && string.Equals(l.Type, "project", StringComparison.OrdinalIgnoreCase));
 
-            packages[pkg.Id!] = pkg;
+                string? resolvedPath = null;
+                if (libInfo?.MSBuildProject is not null)
+                {
+                    resolvedPath = Path.GetFullPath(Path.Combine(projectDir, libInfo.MSBuildProject));
+                }
+
+                projectRefs.Add(new ResolvedProjectReference
+                {
+                    Name = library.Name!,
+                    ResolvedPath = resolvedPath,
+                    DependsOn = [.. library.Dependencies.Select(d => d.Id)],
+                });
+            }
         }
 
         // If not including transitive, filter to only direct deps
         if (!options.IncludeTransitive)
-            return [.. packages.Values.Where(p => p.IsDirect)];
+            return ([.. packages.Values.Where(p => p.IsDirect)], projectRefs);
 
-        return [.. packages.Values];
+        return ([.. packages.Values], projectRefs);
     }
 
     private LockFileTarget? ResolveTarget(LockFile lockFile)
@@ -173,14 +185,5 @@ internal sealed class DependencyResolver(DependencyResolutionOptions options)
         }
 
         return names;
-    }
-
-    private static bool IsHigherVersion(string candidate, string current)
-    {
-        if (NuGet.Versioning.NuGetVersion.TryParse(candidate, out var v1) &&
-            NuGet.Versioning.NuGetVersion.TryParse(current, out var v2))
-            return v1 > v2;
-
-        return string.Compare(candidate, current, StringComparison.OrdinalIgnoreCase) > 0;
     }
 }

@@ -1,15 +1,17 @@
-﻿using CycloneDX.Models;
+using CycloneDX.Models;
 using SbomForge;
 
 var result = await SbomBuilder
-    .ForProject(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "SbomForge", "SbomForge.csproj")))
-    .WithMetadata(meta =>
-    {
-        meta.BomRef = "pkg:nuget/SbomForge@1.0.0";
-        meta.Purl = "pkg:nuget/SbomForge@1.0.0";
-        meta.Copyright = $"Copyright (c) {DateTime.UtcNow.Year} Ronnie Bar-Kochba";
-        meta.Type = Component.Classification.Library;
-    })
+    .AddBasePath(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..")))
+    .AddProject("SbomForge/SbomForge.csproj")
+        .WithVersion("1.0.0")
+        .WithMetadata(meta =>
+        {
+            meta.BomRef = "pkg:nuget/SbomForge@1.0.0";
+            meta.Purl = "pkg:nuget/SbomForge@1.0.0";
+            meta.Copyright = $"Copyright (c) {DateTime.UtcNow.Year} Ronnie Bar-Kochba";
+            meta.Type = Component.Classification.Library;
+        })
     .WithResolution(res =>
     {
         res.IncludeTransitive = true;
@@ -18,7 +20,7 @@ var result = await SbomBuilder
     {
         o.OutputDirectory = Path.Combine(AppContext.BaseDirectory, "sbom-output");
         o.Format = SbomFormat.CycloneDxJson;
-        o.FileNameTemplate = "{ExecutableName}.sbom.json";
+        o.FileNameTemplate = "{ProjectName}.sbom.json";
     })
     .BuildAsync();
 

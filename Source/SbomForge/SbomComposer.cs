@@ -5,22 +5,19 @@ namespace SbomForge;
 /// <summary>
 /// Composes CycloneDX BOMs from resolved dependency graphs.
 /// Uses the official CycloneDX.Models types and handles filtering,
-/// purl construction, and the dependencies section.
+/// purl construction, project reference cross-linking, and the dependencies section.
 /// </summary>
-internal sealed class SbomComposer(ComponentFilter filter, Component globalMetadata)
+internal sealed class SbomComposer(ComponentFilter filter, List<ProjectDefinition> allProjects)
 {
-    public Bom Compose(
-        ExecutableDefinition executable,
-        DependencyGraph graph,
-        Component metadata)
+    public Bom Compose(ProjectDefinition project, DependencyGraph graph)
     {
-        // Start from the user-supplied component and apply executable defaults
-        var rootComponent = metadata.Clone();
+        // Start from the user-supplied component and apply project defaults
+        var rootComponent = project.Metadata.Clone();
         rootComponent.Type = rootComponent.Type != default
             ? rootComponent.Type
             : Component.Classification.Application;
-        rootComponent.Name ??= executable.Name;
-        rootComponent.Version ??= executable.Version ?? "0.0.0";
+        rootComponent.Name ??= project.Name;
+        rootComponent.Version ??= project.Version ?? "0.0.0";
 
         var bom = new Bom
         {
@@ -35,6 +32,7 @@ internal sealed class SbomComposer(ComponentFilter filter, Component globalMetad
             Dependencies = [],
         };
 
+        // Add NuGet package components
         foreach (var pkg in graph.Packages)
         {
             if (ShouldExclude(pkg))
@@ -88,78 +86,57 @@ internal sealed class SbomComposer(ComponentFilter filter, Component globalMetad
             bom.Components.Add(component);
         }
 
+        // Add project reference components — use the configured metadata
+        // (BomRef, Purl, Version, etc.) from the matching ProjectDefinition
+        foreach (var projRef in graph.ProjectReferences)
+        {
+            var configured = FindConfiguredProject(projRef);
+            if (configured is null)
+                continue;
+
+            var component = configured.Metadata.Clone();
+            component.Type = component.Type != default
+                ? component.Type
+                : Component.Classification.Library;
+            component.Name ??= configured.Name;
+            component.Version ??= configured.Version ?? "0.0.0";
+            component.BomRef ??= component.Purl;
+
+            bom.Components.Add(component);
+        }
+
         BuildDependencies(bom, graph);
 
         return bom;
     }
 
-    /// <summary>
-    /// Merges multiple per-executable BOMs into a single solution-level BOM.
-    /// Deduplicates shared components and combines dependency edges.
-    /// </summary>
-    public Bom Merge(IEnumerable<Bom> boms)
+    private ProjectDefinition? FindConfiguredProject(ResolvedProjectReference projRef)
     {
-        var solutionComponent = globalMetadata.Clone();
-        solutionComponent.Type = solutionComponent.Type != default
-            ? solutionComponent.Type
-            : Component.Classification.Application;
-        solutionComponent.Name ??= "Solution";
-
-        var merged = new Bom
+        // Try to match by resolved path first (most reliable)
+        if (projRef.ResolvedPath is not null)
         {
-            SerialNumber = $"urn:uuid:{Guid.NewGuid()}",
-            Version = 1,
-            Metadata = new Metadata
-            {
-                Timestamp = DateTime.UtcNow,
-                Component = solutionComponent,
-            },
-            Components = [],
-            Dependencies = [],
-        };
+            var match = allProjects.FirstOrDefault(p =>
+                string.Equals(
+                    Path.GetFullPath(p.ProjectPath),
+                    projRef.ResolvedPath,
+                    StringComparison.OrdinalIgnoreCase));
 
-        // Deduplicate by PackageUrl (purl) — keep first occurrence
-        var seen = new Dictionary<string, Component>(StringComparer.OrdinalIgnoreCase);
-        var allDependencies = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var bom in boms)
-        {
-            if (bom.Components is not null)
-            {
-                foreach (var component in bom.Components)
-                {
-                    var key = component.Purl ?? $"{component.Name}/{component.Version}";
-                    seen.TryAdd(key, component);
-                }
-            }
-
-            if (bom.Dependencies is not null)
-            {
-                foreach (var dep in bom.Dependencies)
-                {
-                    if (!allDependencies.TryGetValue(dep.Ref, out var depSet))
-                    {
-                        depSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                        allDependencies[dep.Ref] = depSet;
-                    }
-
-                    if (dep.Dependencies is not null)
-                    {
-                        foreach (var d in dep.Dependencies)
-                            depSet.Add(d.Ref);
-                    }
-                }
-            }
+            if (match is not null)
+                return match;
         }
 
-        merged.Components = [.. seen.Values];
-        merged.Dependencies = [.. allDependencies.Select(kv => new Dependency
-        {
-            Ref = kv.Key,
-            Dependencies = [.. kv.Value.Select(r => new Dependency { Ref = r })],
-        })];
+        // Fall back to name matching
+        return allProjects.FirstOrDefault(p =>
+            string.Equals(p.Name, projRef.Name, StringComparison.OrdinalIgnoreCase));
+    }
 
-        return merged;
+    private string? GetProjectRefBomRef(ResolvedProjectReference projRef)
+    {
+        var configured = FindConfiguredProject(projRef);
+        if (configured is null)
+            return null;
+
+        return configured.Metadata.BomRef ?? configured.Metadata.Purl;
     }
 
     private bool ShouldExclude(ResolvedPackage pkg)
@@ -187,16 +164,26 @@ internal sealed class SbomComposer(ComponentFilter filter, Component globalMetad
         return props;
     }
 
-    private static void BuildDependencies(Bom bom, DependencyGraph graph)
+    private void BuildDependencies(Bom bom, DependencyGraph graph)
     {
-        // Add the root component's dependency on its direct packages
+        // Add the root component's dependency on its direct packages and project references
         var rootRef = bom.Metadata?.Component?.BomRef ?? bom.Metadata?.Component?.Purl;
         if (rootRef is not null)
         {
-            var directDeps = graph.Packages
+            var directDeps = new List<Dependency>();
+
+            // Direct NuGet packages
+            directDeps.AddRange(graph.Packages
                 .Where(p => p.IsDirect)
-                .Select(p => new Dependency { Ref = BuildPurl(p) })
-                .ToList();
+                .Select(p => new Dependency { Ref = BuildPurl(p) }));
+
+            // Project references (using their configured BomRef/Purl)
+            foreach (var projRef in graph.ProjectReferences)
+            {
+                var refStr = GetProjectRefBomRef(projRef);
+                if (refStr is not null)
+                    directDeps.Add(new Dependency { Ref = refStr });
+            }
 
             bom.Dependencies.Add(new Dependency
             {
@@ -205,7 +192,7 @@ internal sealed class SbomComposer(ComponentFilter filter, Component globalMetad
             });
         }
 
-        // Add each package's transitive dependencies
+        // Add each NuGet package's transitive dependencies
         foreach (var pkg in graph.Packages)
         {
             var childDeps = pkg.DependsOn
@@ -226,30 +213,62 @@ internal sealed class SbomComposer(ComponentFilter filter, Component globalMetad
                 Dependencies = childDeps,
             });
         }
+
+        // Add each project reference's dependencies
+        foreach (var projRef in graph.ProjectReferences)
+        {
+            var refStr = GetProjectRefBomRef(projRef);
+            if (refStr is null)
+                continue;
+
+            var childDeps = projRef.DependsOn
+                .Select(depName =>
+                {
+                    // Check if it's a NuGet package
+                    var resolved = graph.Packages
+                        .FirstOrDefault(p => string.Equals(p.Id, depName, StringComparison.OrdinalIgnoreCase));
+                    if (resolved is not null)
+                        return new Dependency { Ref = BuildPurl(resolved) };
+
+                    // Check if it's another project reference
+                    var projDep = graph.ProjectReferences
+                        .FirstOrDefault(pr => string.Equals(pr.Name, depName, StringComparison.OrdinalIgnoreCase));
+                    if (projDep is not null)
+                    {
+                        var depRef = GetProjectRefBomRef(projDep);
+                        if (depRef is not null)
+                            return new Dependency { Ref = depRef };
+                    }
+
+                    return new Dependency { Ref = $"pkg:nuget/{depName}" };
+                })
+                .ToList();
+
+            bom.Dependencies.Add(new Dependency
+            {
+                Ref = refStr,
+                Dependencies = childDeps,
+            });
+        }
     }
-
-
 }
 
 /// <summary>
 /// Result container for the SBOM generation pipeline.
+/// Contains one BOM per configured project.
 /// </summary>
 public class SbomResult
 {
     public Dictionary<string, Bom> Boms { get; } = [];
-    public Bom? SolutionBom { get; private set; }
     public List<string> WrittenFilePaths { get; } = [];
 
-    internal void AddBom(string executableName, Bom bom)
-        => Boms[executableName] = bom;
-
-    internal void SetSolutionBom(Bom bom)
-        => SolutionBom = bom;
+    internal void AddBom(string projectName, Bom bom)
+        => Boms[projectName] = bom;
 }
 
 /// <summary>
 /// Serializes CycloneDX BOMs to disk using the official CycloneDX serializers.
-/// Handles file naming from the template and creates the output directory if needed.
+/// Writes one file per project using the configured file name template.
 /// </summary>
 internal sealed class SbomWriter(OutputOptions options)
 {
@@ -257,28 +276,18 @@ internal sealed class SbomWriter(OutputOptions options)
     {
         Directory.CreateDirectory(options.OutputDirectory);
 
-        if (options.Scope != SbomScope.Solution)
+        foreach (var (name, bom) in result.Boms)
         {
-            foreach (var (name, bom) in result.Boms)
-            {
-                var fileName = options.FileNameTemplate
-                    .Replace("{ExecutableName}", name)
-                    .Replace("{Version}", bom.Metadata?.Component?.Version ?? "0.0.0");
+            var fileName = options.FileNameTemplate
+                .Replace("{ProjectName}", name)
+                .Replace("{ExecutableName}", name)
+                .Replace("{Version}", bom.Metadata?.Component?.Version ?? "0.0.0");
 
-                // Adjust extension based on format
-                fileName = AdjustExtension(fileName);
+            // Adjust extension based on format
+            fileName = AdjustExtension(fileName);
 
-                var path = Path.Combine(options.OutputDirectory, fileName);
-                await SerializeAsync(bom, path);
-                result.WrittenFilePaths.Add(path);
-            }
-        }
-
-        if (result.SolutionBom is not null)
-        {
-            var solutionFileName = AdjustExtension("solution-sbom.json");
-            var path = Path.Combine(options.OutputDirectory, solutionFileName);
-            await SerializeAsync(result.SolutionBom, path);
+            var path = Path.Combine(options.OutputDirectory, fileName);
+            await SerializeAsync(bom, path);
             result.WrittenFilePaths.Add(path);
         }
     }
