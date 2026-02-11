@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="SbomForge.Example/SbomForge.Example.csproj" />
+  <Project Path="SbomForge.Sbom/SbomForge.Sbom.csproj" />
+  <Project Path="SbomForge/SbomForge.csproj" />
+</Solution>

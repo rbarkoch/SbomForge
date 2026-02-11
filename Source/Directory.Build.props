@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <!-- NuGet.Frameworks is needed at runtime by NuGet.ProjectModel but
+         Microsoft.Build.Locator's MSBL001 check wants it excluded.
+         We disable the check since we handle MSBuild assembly loading
+         correctly via MSBuildLocator.RegisterDefaults(). -->
+    <DisableMSBuildAssemblyCopyCheck>true</DisableMSBuildAssemblyCopyCheck>
+  </PropertyGroup>
+</Project>
