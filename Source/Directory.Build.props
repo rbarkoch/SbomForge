@@ -5,5 +5,9 @@
          We disable the check since we handle MSBuild assembly loading
          correctly via MSBuildLocator.RegisterDefaults(). -->
     <DisableMSBuildAssemblyCopyCheck>true</DisableMSBuildAssemblyCopyCheck>
+    
+    <!-- Default metadata for all projects -->
+    <Company>SbomForge Contributors</Company>
+    <Copyright>Copyright (c) 2026 SbomForge Contributors</Copyright>
   </PropertyGroup>
 </Project>

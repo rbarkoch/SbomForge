@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using CycloneDX.Models;
 
 namespace SbomForge;
@@ -13,11 +18,39 @@ internal sealed class SbomComposer(ComponentFilter filter, List<ProjectDefinitio
     {
         // Start from the user-supplied component and apply project defaults
         var rootComponent = project.Metadata.Clone();
+        
+        // Determine if this is an executable
+        var isExecutable = IsExecutable(project.OutputType);
+        
+        // Set default Type based on OutputType
         rootComponent.Type = rootComponent.Type != default
             ? rootComponent.Type
-            : Component.Classification.Application;
+            : (isExecutable ? Component.Classification.Application : Component.Classification.Library);
+        
         rootComponent.Name ??= project.Name;
-        rootComponent.Version ??= project.Version ?? "0.0.0";
+        rootComponent.Version ??= project.ProjectVersion ?? "0.0.0";
+        rootComponent.Copyright ??= project.ProjectCopyright;
+        rootComponent.Description ??= project.ProjectDescription;
+        
+        // Set supplier from Company or Authors if not already set
+        if (rootComponent.Supplier == null && !string.IsNullOrEmpty(project.ProjectCompany))
+        {
+            rootComponent.Supplier = new OrganizationalEntity { Name = project.ProjectCompany };
+        }
+        else if (rootComponent.Supplier == null && !string.IsNullOrEmpty(project.ProjectAuthors))
+        {
+            rootComponent.Supplier = new OrganizationalEntity { Name = project.ProjectAuthors };
+        }
+        
+        // Set default Purl if not provided
+        if (string.IsNullOrEmpty(rootComponent.Purl))
+        {
+            var purlType = isExecutable ? "generic" : "nuget";
+            rootComponent.Purl = $"pkg:{purlType}/{rootComponent.Name}@{rootComponent.Version}";
+        }
+        
+        // Set default BomRef if not provided (use Purl as default)
+        rootComponent.BomRef ??= rootComponent.Purl;
 
         var bom = new Bom
         {
@@ -27,6 +60,18 @@ internal sealed class SbomComposer(ComponentFilter filter, List<ProjectDefinitio
             {
                 Timestamp = DateTime.UtcNow,
                 Component = rootComponent,
+                Tools = new ToolChoices
+                {
+                    Components = 
+                    [
+                        new Component
+                        {
+                            Type = Component.Classification.Application,
+                            Name = "SbomForge",
+                            Version = GetSbomForgeVersion(),
+                        },
+                    ],
+                },
             },
             Components = [],
             Dependencies = [],
@@ -95,11 +140,38 @@ internal sealed class SbomComposer(ComponentFilter filter, List<ProjectDefinitio
                 continue;
 
             var component = configured.Metadata.Clone();
+            
+            // Determine if this is an executable
+            var refIsExecutable = IsExecutable(configured.OutputType);
+            
+            // Set default Type based on OutputType
             component.Type = component.Type != default
                 ? component.Type
-                : Component.Classification.Library;
+                : (refIsExecutable ? Component.Classification.Application : Component.Classification.Library);
+            
             component.Name ??= configured.Name;
-            component.Version ??= configured.Version ?? "0.0.0";
+            component.Version ??= configured.ProjectVersion ?? "0.0.0";
+            component.Copyright ??= configured.ProjectCopyright;
+            component.Description ??= configured.ProjectDescription;
+            
+            // Set supplier from Company or Authors if not already set
+            if (component.Supplier == null && !string.IsNullOrEmpty(configured.ProjectCompany))
+            {
+                component.Supplier = new OrganizationalEntity { Name = configured.ProjectCompany };
+            }
+            else if (component.Supplier == null && !string.IsNullOrEmpty(configured.ProjectAuthors))
+            {
+                component.Supplier = new OrganizationalEntity { Name = configured.ProjectAuthors };
+            }
+            
+            // Set default Purl if not provided
+            if (string.IsNullOrEmpty(component.Purl))
+            {
+                var purlType = refIsExecutable ? "generic" : "nuget";
+                component.Purl = $"pkg:{purlType}/{component.Name}@{component.Version}";
+            }
+            
+            // Set default BomRef if not provided (use Purl as default)
             component.BomRef ??= component.Purl;
 
             bom.Components.Add(component);
@@ -108,6 +180,27 @@ internal sealed class SbomComposer(ComponentFilter filter, List<ProjectDefinitio
         BuildDependencies(bom, graph);
 
         return bom;
+    }
+
+    private static bool IsExecutable(string? outputType)
+    {
+        return !string.IsNullOrEmpty(outputType) &&
+               (string.Equals(outputType, "Exe", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(outputType, "WinExe", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string GetSbomForgeVersion()
+    {
+        try
+        {
+            var assembly = typeof(SbomComposer).Assembly;
+            var version = assembly.GetName().Version;
+            return version?.ToString(3) ?? "1.0.0";
+        }
+        catch
+        {
+            return "1.0.0";
+        }
     }
 
     private ProjectDefinition? FindConfiguredProject(ResolvedProjectReference projRef)
@@ -141,7 +234,8 @@ internal sealed class SbomComposer(ComponentFilter filter, List<ProjectDefinitio
 
     private bool ShouldExclude(ResolvedPackage pkg)
     {
-        if (filter.ExcludePackageIds.Contains(pkg.Id, StringComparer.OrdinalIgnoreCase))
+        if (filter.ExcludePackageIds.Any(id => 
+            string.Equals(id, pkg.Id, StringComparison.OrdinalIgnoreCase)))
             return true;
 
         if (filter.ExcludePackagePrefixes.Any(prefix =>
@@ -314,7 +408,12 @@ internal sealed class SbomWriter(OutputOptions options)
                 throw new ArgumentOutOfRangeException(nameof(options.Format));
         }
 
+#if NET48
+        File.WriteAllText(path, content);
+        await Task.CompletedTask;
+#else
         await File.WriteAllTextAsync(path, content);
+#endif
     }
 
     private string AdjustExtension(string fileName)

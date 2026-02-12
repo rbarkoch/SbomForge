@@ -1,0 +1,57 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:f5d5a88d-0d49-4e9f-9291-47326c71633f",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-02-12T00:42:16Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "SbomForge",
+          "version": "1.0.0"
+        }
+      ]
+    },
+    "component": {
+      "type": "library",
+      "bom-ref": "pkg:nuget/ExampleClassLibrary2@1.2.3",
+      "supplier": {
+        "name": "Example Corp"
+      },
+      "name": "ExampleClassLibrary2",
+      "version": "1.2.3",
+      "description": "Example class library for SBOM testing",
+      "copyright": "Copyright (c) 2026 Example Corp",
+      "purl": "pkg:nuget/ExampleClassLibrary2@1.2.3"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Newtonsoft.Json@13.0.4",
+      "name": "Newtonsoft.Json",
+      "version": "13.0.4",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+        }
+      ],
+      "purl": "pkg:nuget/Newtonsoft.Json@13.0.4"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:nuget/ExampleClassLibrary2@1.2.3",
+      "dependsOn": [
+        "pkg:nuget/Newtonsoft.Json@13.0.4"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Newtonsoft.Json@13.0.4",
+      "dependsOn": []
+    }
+  ]
+}

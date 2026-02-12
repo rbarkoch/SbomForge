@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using CycloneDX.Models;
 
 namespace SbomForge;
@@ -12,10 +13,17 @@ public class ProjectDefinition
 {
     public required string Name { get; set; }
     public required string ProjectPath { get; set; }
-    public string? Version { get; set; }
+    public string? OutputType { get; set; }
+    
+    // Properties read from the project file
+    public string? ProjectVersion { get; set; }
+    public string? ProjectCopyright { get; set; }
+    public string? ProjectCompany { get; set; }
+    public string? ProjectAuthors { get; set; }
+    public string? ProjectDescription { get; set; }
 
     /// <summary>
-    /// CycloneDX component metadata for this project. Set BomRef, Purl,
+    /// CycloneDX component metadata for this project. Set Version, BomRef, Purl,
     /// Copyright, Type, and any other <see cref="Component"/> field directly.
     /// </summary>
     public Component Metadata { get; set; } = new();

@@ -1,0 +1,847 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:06a89962-6b16-422f-9b39-6acfdd31a1a7",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-02-12T00:42:16Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "SbomForge",
+          "version": "1.0.0"
+        }
+      ]
+    },
+    "component": {
+      "type": "application",
+      "bom-ref": "pkg:generic/ExampleConsoleApp1@1.0.0",
+      "supplier": {
+        "name": "Example Corp"
+      },
+      "name": "ExampleConsoleApp1",
+      "version": "1.0.0",
+      "copyright": "Copyright (c) 2026 Example Corp",
+      "purl": "pkg:generic/ExampleConsoleApp1@1.0.0"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Configuration@10.0.3",
+      "name": "Microsoft.Extensions.Configuration",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "H1Cjv2xmm7O3iAGmFTcnSM0ZhLQ/7SqefmAvSJoT1PbXoxeYc2fo0mCLn2JlVbr9E6YpoU9q/o0fI9neDJB0xQ=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Configuration@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@10.0.3",
+      "name": "Microsoft.Extensions.Configuration.Abstractions",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "xVDHL0\u002BSIgemfh95fTO9cGLe17TWv/ZP0n7m01z8X6pzt2DmQpucioWR/mYZA1sRlkWnkXzfl0JweLNWmE9WMg=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Configuration.Binder@10.0.3",
+      "name": "Microsoft.Extensions.Configuration.Binder",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "759UhpKaR5Jsll9kXpkft4z/7tpeF7Dw2rTY/9f9JchaSQTpRFNIPkZFZvoo7fFpbjUaqtDlO5aiGpmQrp/EUA=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Configuration.Binder@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Configuration.CommandLine@10.0.3",
+      "name": "Microsoft.Extensions.Configuration.CommandLine",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "qVytXuCHQCIJcOsJJnp\u002B1mNCAtiWuLqI0qhCcByFuyxDifthefEWX3fVAXbaxn1lDP2iR1KH44Oq7tvmT7dBHg=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Configuration.CommandLine@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Configuration.EnvironmentVariables@10.0.3",
+      "name": "Microsoft.Extensions.Configuration.EnvironmentVariables",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "jBm6bpc5OM2VHM/QYVUyD78xweFzble6UsIt7GUnQAwCm07hktFaUBtRfO7viLGg5qPbc4ByteNB7DeVAYNSfA=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Configuration.EnvironmentVariables@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Configuration.FileExtensions@10.0.3",
+      "name": "Microsoft.Extensions.Configuration.FileExtensions",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "/MLsBbLpwDxsU\u002B7DDNwasf2mKrpMSOWEL377gNZTy5waFkCYvS3GVaLIz6bvikH4rAwHrCOxHw0t/5iCoImYCA=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Configuration.FileExtensions@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Configuration.Json@10.0.3",
+      "name": "Microsoft.Extensions.Configuration.Json",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "mGGMOA9nkET8OVsQfS41o66eWkckBzNHJK6\u002B5VbLQ2YdyqKphcv27uDZxLf4exSl\u002B5QxLnHkN\u002BW/4qEDgyvCPA=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Configuration.Json@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Configuration.UserSecrets@10.0.3",
+      "name": "Microsoft.Extensions.Configuration.UserSecrets",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "f6FiscfqlLrNUR2x7XcMqMGz5ZFRwTvezZuebIn4v2ste0nL/sEZ7pdveDXqDyonVv/QTKT8vvIEqTQCczzsOg=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Configuration.UserSecrets@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.DependencyInjection@10.0.3",
+      "name": "Microsoft.Extensions.DependencyInjection",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "2DLOmC0EkB2smVK8lPP1PIKEgL1arE3CMp9XSIQB/Y7ev5nnnyuM/PizKJ6QfLD08QCYoopSC9SFdbYglDomYg=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.DependencyInjection@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.DependencyInjection.Abstractions@10.0.3",
+      "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "bwGMrRcAMWx2s/RDgja97p27rxSz2pEQW0\u002BrX5cWAUWVETVJ/eyxGfjAl8vuG5a\u002BlckWmPIE\u002BvcuaZNVB5YDdw=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.DependencyInjection.Abstractions@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Diagnostics@10.0.3",
+      "name": "Microsoft.Extensions.Diagnostics",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "tc0R6i2T\u002B138taoxFPQXb7Sy/4rtq4ytoJrAt4fNGs6k89mHpEhZnXUNgaFKwwb5Ud5rIUeLC6tfpsuHNwiWqg=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Diagnostics@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Diagnostics.Abstractions@10.0.3",
+      "name": "Microsoft.Extensions.Diagnostics.Abstractions",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "mQiTzAj7PIJ2A9YXR5QhgulS1fTWhmQc3ckd1Mrf3hKW07d03fBDqx8vVaFw\u002BcRTebDOeB6pNqdWdnRxsi1hBA=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Diagnostics.Abstractions@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.FileProviders.Abstractions@10.0.3",
+      "name": "Microsoft.Extensions.FileProviders.Abstractions",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4TD9AXDRsipTmaemwnjt/DM5Ri0de2JzHQhvZ4woBTjUtL4XrPNsMrOk5oiLJAx1gTrE6pOIhxv\u002BlEde5F6CZA=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.FileProviders.Abstractions@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.FileProviders.Physical@10.0.3",
+      "name": "Microsoft.Extensions.FileProviders.Physical",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "8qLl5LXtcj6Z8yPbHAA/a57fvvl9nUCdi59AJFuixcWM4wSuENZ8jjoRATOKs/I4vOi/bDe0d5LqGSSLE634eA=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.FileProviders.Physical@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.FileSystemGlobbing@10.0.3",
+      "name": "Microsoft.Extensions.FileSystemGlobbing",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "oM7pl8uJz8WRPRlh4AGQS61aeV9GOfTu89yqTiRSYyyMuCNVkbNra9zEk7ApyJ/sZrUpbjOZCRHuitCEsTWghg=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.FileSystemGlobbing@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Hosting@10.0.3",
+      "name": "Microsoft.Extensions.Hosting",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ssbRCALcbBXfQPXLr4bZ3FVlbnDzeR0F6hPKDUCZLPQul7oBeSGaJq\u002BXLUjwYaptOs4TN5cSy1q6LVLPWFgjKQ=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Hosting@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Hosting.Abstractions@10.0.3",
+      "name": "Microsoft.Extensions.Hosting.Abstractions",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "GdMpC10Jf6poxSvUJ4lgYpJ5F/kJeaAoJmrPufjBoPYyCTKKY5Dyl0rZA\u002BLBNvFqTq1cZa/lhlptlUhNvU6xrg=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Hosting.Abstractions@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Logging@10.0.3",
+      "name": "Microsoft.Extensions.Logging",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "8D9Er1cGXNjNDIB\u002BVLBNHn386L5ls2FoiG9a6o12gyn\u002BGG3w6jdfUhzT8dtBnKcevE7/fsVA8MS3FBgFfClFtQ=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Logging@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Logging.Abstractions@10.0.3",
+      "name": "Microsoft.Extensions.Logging.Abstractions",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "lxl0WLk7ROgBFAsjcOYjQ8/DVK\u002BVMszxGBzUhgtQmAsTNldLL5pk9NG/cWTsXHq0lUhUEAtZkEE7jOGOA8bGKQ=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Logging.Abstractions@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Logging.Configuration@10.0.3",
+      "name": "Microsoft.Extensions.Logging.Configuration",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "PBlaoYeusaxNYyN4WFjzcXWlUDSvLUPxy/e6oP1SONOOYA/oBWT2uBmFGJMV9VTtXiXXxCB39LqlYWbsWE4UKA=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Logging.Configuration@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Logging.Console@10.0.3",
+      "name": "Microsoft.Extensions.Logging.Console",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "7sRvbBH3icaV9qil8fyBKmR\u002ByEZ0yDU6Bq/KgBwswS36164yGaxbf7Kd4hD1iHZ2GfvyoJWWqBUBm9QX/IASAQ=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Logging.Console@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Logging.Debug@10.0.3",
+      "name": "Microsoft.Extensions.Logging.Debug",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "OoH8AcYCq74ab5XUIQc84CZk54G/cU\u002BJztiMXgNKGkomJOeuistTMg0PWPC4VXXMSVBEGWJuMDEBttOrHyXe8w=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Logging.Debug@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Logging.EventLog@10.0.3",
+      "name": "Microsoft.Extensions.Logging.EventLog",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "1V1oRR\u002B0DKyetPKI4POn7\u002BjXH4kI1D69R/Rjje/4/BSkTM2iUCsRkr7Q0gDyXayhCXgPEf/P19kgwN5t0s/p8w=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Logging.EventLog@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Logging.EventSource@10.0.3",
+      "name": "Microsoft.Extensions.Logging.EventSource",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "r2hIVkSrb\u002Bf8FqcguHqlzyQ8lNGCtWsOPY9\u002BOzJinrqdzQfszS8fXkHVcNHW4uK6WFxI2tPSiGdms2SeRJq8hg=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Logging.EventSource@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Options@10.0.3",
+      "name": "Microsoft.Extensions.Options",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "hU6WzGTPvPoLA2ng1ILvWQb3g0qORdlHNsxI8IcPLumJb3suimYUl\u002BbbDzdo1V4KFsvVhnMWzysHpKbZaoDQPQ=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Options@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Options.ConfigurationExtensions@10.0.3",
+      "name": "Microsoft.Extensions.Options.ConfigurationExtensions",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "bn6QoBbbvwmzLIFyxrnL2/e\u002BsqoNUOGbHyfWK9DPONMv1mDCYHm/C7MusYASM31b2lUx6OiDmonb3v\u002Bdv5t0nA=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Options.ConfigurationExtensions@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Microsoft.Extensions.Primitives@10.0.3",
+      "name": "Microsoft.Extensions.Primitives",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "GEcpTwo7sUoLGGNTqV1FZEuL\u002BtTD9m81NX/mh099dqGNna07/UGZShKQNZRw4hv6nlliSUwYQgSYc7OR99Jufg=="
+        }
+      ],
+      "purl": "pkg:nuget/Microsoft.Extensions.Primitives@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Newtonsoft.Json@13.0.4",
+      "name": "Newtonsoft.Json",
+      "version": "13.0.4",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+        }
+      ],
+      "purl": "pkg:nuget/Newtonsoft.Json@13.0.4",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/System.Diagnostics.EventLog@10.0.3",
+      "name": "System.Diagnostics.EventLog",
+      "version": "10.0.3",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "\u002BbZnyzt0/vt4g3QSllhsRNGTpa09p7Juy5K8spcK73cOTOefu4\u002BHoY89hZOgIOmzB5A4hqPyEDKnzra7KKnhZw=="
+        }
+      ],
+      "purl": "pkg:nuget/System.Diagnostics.EventLog@10.0.3",
+      "properties": [
+        {
+          "name": "cdx:nuget:isDirect",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/ExampleClassLibrary1@1.0.0",
+      "supplier": {
+        "name": "Example Corp"
+      },
+      "name": "ExampleClassLibrary1",
+      "version": "1.0.0",
+      "copyright": "Copyright (c) 2026 Example Corp",
+      "purl": "pkg:nuget/ExampleClassLibrary1@1.0.0"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/ExampleClassLibrary2@1.2.3",
+      "supplier": {
+        "name": "Example Corp"
+      },
+      "name": "ExampleClassLibrary2",
+      "version": "1.2.3",
+      "description": "Example class library for SBOM testing",
+      "copyright": "Copyright (c) 2026 Example Corp",
+      "purl": "pkg:nuget/ExampleClassLibrary2@1.2.3"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:generic/ExampleConsoleApp1@1.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Configuration@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Primitives@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.Primitives@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Configuration.Binder@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.Configuration@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Configuration.CommandLine@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.Configuration@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Configuration.EnvironmentVariables@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.Configuration@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Configuration.FileExtensions@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.Configuration@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.FileProviders.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.FileProviders.Physical@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Primitives@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Configuration.Json@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.Configuration@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Configuration.FileExtensions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.FileProviders.Abstractions@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Configuration.UserSecrets@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Configuration.Json@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.FileProviders.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.FileProviders.Physical@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.DependencyInjection@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.DependencyInjection.Abstractions@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.DependencyInjection.Abstractions@10.0.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Diagnostics@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.Configuration@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Diagnostics.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Options.ConfigurationExtensions@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Diagnostics.Abstractions@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.DependencyInjection.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Options@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.FileProviders.Abstractions@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.Primitives@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.FileProviders.Physical@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.FileProviders.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.FileSystemGlobbing@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Primitives@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.FileSystemGlobbing@10.0.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Hosting@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.Configuration@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Configuration.Binder@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Configuration.CommandLine@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Configuration.EnvironmentVariables@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Configuration.FileExtensions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Configuration.Json@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Configuration.UserSecrets@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.DependencyInjection@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.DependencyInjection.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Diagnostics@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.FileProviders.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.FileProviders.Physical@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Hosting.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging.Configuration@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging.Console@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging.Debug@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging.EventLog@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging.EventSource@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Options@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Hosting.Abstractions@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.DependencyInjection.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Diagnostics.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.FileProviders.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging.Abstractions@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Logging@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.DependencyInjection@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Options@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Logging.Abstractions@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.DependencyInjection.Abstractions@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Logging.Configuration@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.Configuration@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Configuration.Binder@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.DependencyInjection.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Options@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Options.ConfigurationExtensions@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Logging.Console@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.DependencyInjection.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging.Configuration@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Options@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Logging.Debug@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.DependencyInjection.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging.Abstractions@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Logging.EventLog@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.DependencyInjection.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Options@10.0.3",
+        "pkg:nuget/System.Diagnostics.EventLog@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Logging.EventSource@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.DependencyInjection.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Logging.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Options@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Primitives@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Options@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.DependencyInjection.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Primitives@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Options.ConfigurationExtensions@10.0.3",
+      "dependsOn": [
+        "pkg:nuget/Microsoft.Extensions.Configuration.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Configuration.Binder@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.DependencyInjection.Abstractions@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Options@10.0.3",
+        "pkg:nuget/Microsoft.Extensions.Primitives@10.0.3"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Microsoft.Extensions.Primitives@10.0.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:nuget/Newtonsoft.Json@13.0.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:nuget/System.Diagnostics.EventLog@10.0.3",
+      "dependsOn": []
+    }
+  ]
+}

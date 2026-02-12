@@ -4,9 +4,9 @@ using SbomForge;
 var result = await SbomBuilder
     .AddBasePath(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..")))
     .AddProject("SbomForge/SbomForge.csproj")
-        .WithVersion("1.0.0")
         .WithMetadata(meta =>
         {
+            meta.Version = "1.0.0";
             meta.BomRef = "pkg:nuget/SbomForge@1.0.0";
             meta.Purl = "pkg:nuget/SbomForge@1.0.0";
             meta.Copyright = $"Copyright (c) {DateTime.UtcNow.Year} Ronnie Bar-Kochba";

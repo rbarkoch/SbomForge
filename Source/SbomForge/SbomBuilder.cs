@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 using CycloneDX.Models;
 
 namespace SbomForge;
@@ -51,14 +55,119 @@ public class SbomBuilder
         if (!File.Exists(fullPath))
             throw new FileNotFoundException($"Project not found: {fullPath}");
 
+        var projectMetadata = ReadProjectMetadata(fullPath);
+        
         var definition = new ProjectDefinition
         {
             Name = Path.GetFileNameWithoutExtension(fullPath),
             ProjectPath = fullPath,
+            OutputType = projectMetadata.OutputType,
+            ProjectVersion = projectMetadata.Version,
+            ProjectCopyright = projectMetadata.Copyright,
+            ProjectCompany = projectMetadata.Company,
+            ProjectAuthors = projectMetadata.Authors,
+            ProjectDescription = projectMetadata.Description,
         };
 
         _projects.Add(definition);
         return new ProjectBuilder(this, definition);
+    }
+
+    private static ProjectMetadata ReadProjectMetadata(string projectPath)
+    {
+        var metadata = new ProjectMetadata();
+        
+        try
+        {
+            var projectDir = Path.GetDirectoryName(projectPath);
+            if (projectDir == null)
+                return metadata;
+            
+            // First, read Directory.Build.props files from the directory tree (parent to child)
+            // This establishes the base values that can be overridden
+            var buildPropsFiles = new List<string>();
+            var currentDir = projectDir;
+            
+            // Walk up the directory tree to find all Directory.Build.props files
+            while (currentDir != null)
+            {
+                var buildPropsPath = Path.Combine(currentDir, "Directory.Build.props");
+                if (File.Exists(buildPropsPath))
+                {
+                    buildPropsFiles.Insert(0, buildPropsPath); // Insert at beginning for bottom-up processing
+                }
+                
+                var parent = Directory.GetParent(currentDir);
+                currentDir = parent?.FullName;
+            }
+            
+            // Apply Directory.Build.props files in order (higher in tree first, so lower ones override)
+            foreach (var buildPropsFile in buildPropsFiles)
+            {
+                var content = File.ReadAllText(buildPropsFile);
+                ApplyMetadataFromContent(metadata, content);
+            }
+            
+            // Finally, apply the project file itself (highest precedence)
+            var projectContent = File.ReadAllText(projectPath);
+            ApplyMetadataFromContent(metadata, projectContent);
+        }
+        catch
+        {
+            // If we can't read the file, just return empty metadata
+        }
+        
+        return metadata;
+    }
+    
+    private static void ApplyMetadataFromContent(ProjectMetadata metadata, string content)
+    {
+        // Later values override earlier ones (project file overrides Directory.Build.props)
+        var outputType = ReadXmlElement(content, "OutputType");
+        if (outputType != null) metadata.OutputType = outputType;
+        
+        var version = ReadXmlElement(content, "Version");
+        if (version != null) metadata.Version = version;
+        
+        var copyright = ReadXmlElement(content, "Copyright");
+        if (copyright != null) metadata.Copyright = copyright;
+        
+        var company = ReadXmlElement(content, "Company");
+        if (company != null) metadata.Company = company;
+        
+        var authors = ReadXmlElement(content, "Authors");
+        if (authors != null) metadata.Authors = authors;
+        
+        var description = ReadXmlElement(content, "Description");
+        if (description != null) metadata.Description = description;
+    }
+    
+    private static string? ReadXmlElement(string content, string elementName)
+    {
+        var startTag = $"<{elementName}>";
+        var endTag = $"</{elementName}>";
+        var startIndex = content.IndexOf(startTag, StringComparison.OrdinalIgnoreCase);
+        
+        if (startIndex == -1)
+            return null;
+        
+        startIndex += startTag.Length;
+        var endIndex = content.IndexOf(endTag, startIndex, StringComparison.OrdinalIgnoreCase);
+        
+        if (endIndex == -1)
+            return null;
+        
+        return content[startIndex..endIndex].Trim();
+    }
+    
+    private class ProjectMetadata
+    {
+        public string? OutputType { get; set; }
+        public string? Version { get; set; }
+        public string? Copyright { get; set; }
+        public string? Company { get; set; }
+        public string? Authors { get; set; }
+        public string? Description { get; set; }
     }
 
     // -------------------------------------------------------------------------
@@ -136,7 +245,7 @@ public class SbomBuilder
 /// <summary>
 /// Fluent builder for configuring a single project within the SBOM pipeline.
 /// Returned by <see cref="SbomBuilder.AddProject"/>. Chain
-/// <c>.WithVersion()</c> and <c>.WithMetadata()</c> to configure the project,
+/// <c>.WithMetadata()</c> to configure the project,
 /// then continue with <c>.AddProject()</c>, <c>.WithResolution()</c>,
 /// <c>.WithOutput()</c>, or <c>.BuildAsync()</c>.
 /// </summary>
@@ -151,16 +260,9 @@ public class ProjectBuilder
         _project = project;
     }
 
-    /// <summary>Version string written to the SBOM metadata for this project.</summary>
-    public ProjectBuilder WithVersion(string version)
-    {
-        _project.Version = version;
-        return this;
-    }
-
     /// <summary>
     /// Configure CycloneDX component metadata for this project.
-    /// Set BomRef, Purl, Copyright, Type, and any other <see cref="Component"/> fields.
+    /// Set Version, BomRef, Purl, Copyright, Type, and any other <see cref="Component"/> fields.
     /// </summary>
     public ProjectBuilder WithMetadata(Action<Component> configure)
     {

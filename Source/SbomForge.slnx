@@ -6,7 +6,6 @@
     <Project Path="ExampleDeployment/ExampleConsoleApp2/ExampleConsoleApp2.csproj" />
     <Project Path="ExampleDeployment/ExampleSbom/ExampleSbom.csproj" />
   </Folder>
-  <Project Path="SbomForge.Example/SbomForge.Example.csproj" />
   <Project Path="SbomForge.Sbom/SbomForge.Sbom.csproj" />
   <Project Path="SbomForge/SbomForge.csproj" />
 </Solution>
