@@ -27,6 +27,18 @@ public class ProjectDefinition
     /// Copyright, Type, and any other <see cref="Component"/> field directly.
     /// </summary>
     public Component Metadata { get; set; } = new();
+
+    /// <summary>
+    /// Paths to external CycloneDX BOM files whose components and dependencies
+    /// will be merged into this project's SBOM.
+    /// </summary>
+    public List<string> ExternalBomPaths { get; set; } = [];
+
+    /// <summary>
+    /// Additional components to include in this project's SBOM.
+    /// These are added alongside the auto-resolved NuGet and project reference components.
+    /// </summary>
+    public List<Component> AdditionalComponents { get; set; } = [];
 }
 
 /// <summary>

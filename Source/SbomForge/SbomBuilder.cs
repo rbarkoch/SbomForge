@@ -15,6 +15,8 @@ public class SbomBuilder
 {
     private string? _basePath;
     private readonly List<ProjectDefinition> _projects = [];
+    private readonly List<string> _externalBomPaths = [];
+    private readonly List<Component> _additionalComponents = [];
     private readonly ComponentFilter _filter = new();
     private readonly DependencyResolutionOptions _resolution = new();
     private readonly OutputOptions _output = new();
@@ -171,6 +173,53 @@ public class SbomBuilder
     }
 
     // -------------------------------------------------------------------------
+    // External BOM references
+    // -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Add an external CycloneDX BOM file whose components and dependencies
+    /// will be merged into every project's SBOM. Supports JSON and XML formats
+    /// (auto-detected from the file extension).
+    /// </summary>
+    public SbomBuilder AddExternalBom(string bomPath)
+    {
+        var fullPath = ResolvePath(bomPath);
+        if (!File.Exists(fullPath))
+            throw new FileNotFoundException($"External BOM file not found: {fullPath}");
+
+        _externalBomPaths.Add(fullPath);
+        return this;
+    }
+
+    // -------------------------------------------------------------------------
+    // Additional components
+    // -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Add a manually defined component that will be included in every project's
+    /// SBOM. Use this for components that are not discovered through NuGet
+    /// dependency resolution (e.g. native libraries, vendored code, etc.).
+    /// </summary>
+    public SbomBuilder AddComponent(Action<Component> configure)
+    {
+        var component = new Component();
+        configure(component);
+        _additionalComponents.Add(component);
+        return this;
+    }
+
+    // -------------------------------------------------------------------------
+    // Path resolution
+    // -------------------------------------------------------------------------
+
+    internal string ResolvePath(string relativePath)
+    {
+        return _basePath is not null
+            ? Path.GetFullPath(Path.Combine(_basePath, relativePath))
+            : Path.GetFullPath(relativePath);
+    }
+
+    // -------------------------------------------------------------------------
     // Filtering
     // -------------------------------------------------------------------------
 
@@ -224,7 +273,7 @@ public class SbomBuilder
                 "No projects defined. Call AddProject() first.");
 
         var resolver = new DependencyResolver(_resolution);
-        var composer = new SbomComposer(_filter, _projects);
+        var composer = new SbomComposer(_filter, _projects, _externalBomPaths, _additionalComponents);
         var writer = new SbomWriter(_output);
 
         var result = new SbomResult();
@@ -267,6 +316,34 @@ public class ProjectBuilder
     public ProjectBuilder WithMetadata(Action<Component> configure)
     {
         configure(_project.Metadata);
+        return this;
+    }
+
+    /// <summary>
+    /// Add an external CycloneDX BOM file whose components and dependencies
+    /// will be merged into this project's SBOM. Supports JSON and XML formats
+    /// (auto-detected from the file extension).
+    /// </summary>
+    public ProjectBuilder AddExternalBom(string bomPath)
+    {
+        var fullPath = _builder.ResolvePath(bomPath);
+        if (!File.Exists(fullPath))
+            throw new FileNotFoundException($"External BOM file not found: {fullPath}");
+
+        _project.ExternalBomPaths.Add(fullPath);
+        return this;
+    }
+
+    /// <summary>
+    /// Add a manually defined component that will be included in this project's
+    /// SBOM. Use this for components that are not discovered through NuGet
+    /// dependency resolution (e.g. native libraries, vendored code, etc.).
+    /// </summary>
+    public ProjectBuilder AddComponent(Action<Component> configure)
+    {
+        var component = new Component();
+        configure(component);
+        _project.AdditionalComponents.Add(component);
         return this;
     }
 

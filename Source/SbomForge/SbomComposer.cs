@@ -12,7 +12,11 @@ namespace SbomForge;
 /// Uses the official CycloneDX.Models types and handles filtering,
 /// purl construction, project reference cross-linking, and the dependencies section.
 /// </summary>
-internal sealed class SbomComposer(ComponentFilter filter, List<ProjectDefinition> allProjects)
+internal sealed class SbomComposer(
+    ComponentFilter filter,
+    List<ProjectDefinition> allProjects,
+    List<string> globalExternalBomPaths,
+    List<Component> globalAdditionalComponents)
 {
     public Bom Compose(ProjectDefinition project, DependencyGraph graph)
     {
@@ -179,6 +183,20 @@ internal sealed class SbomComposer(ComponentFilter filter, List<ProjectDefinitio
 
         BuildDependencies(bom, graph);
 
+        // Merge external BOMs (global then per-project)
+        foreach (var bomPath in globalExternalBomPaths)
+            MergeExternalBom(bom, LoadExternalBom(bomPath));
+
+        foreach (var bomPath in project.ExternalBomPaths)
+            MergeExternalBom(bom, LoadExternalBom(bomPath));
+
+        // Add additional components (global then per-project)
+        foreach (var component in globalAdditionalComponents)
+            AddAdditionalComponent(bom, component.Clone());
+
+        foreach (var component in project.AdditionalComponents)
+            AddAdditionalComponent(bom, component.Clone());
+
         return bom;
     }
 
@@ -343,6 +361,150 @@ internal sealed class SbomComposer(ComponentFilter filter, List<ProjectDefinitio
                 Ref = refStr,
                 Dependencies = childDeps,
             });
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // External BOM merging
+    // -------------------------------------------------------------------------
+
+    private static Bom LoadExternalBom(string path)
+    {
+        var content = File.ReadAllText(path);
+
+        Bom? bom;
+        if (path.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
+            bom = CycloneDX.Xml.Serializer.Deserialize(content);
+        else
+            bom = CycloneDX.Json.Serializer.Deserialize(content);
+
+        return bom ?? throw new InvalidOperationException(
+            $"Failed to deserialize external BOM: {path}");
+    }
+
+    private static void MergeExternalBom(Bom target, Bom source)
+    {
+        var existingPurls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (target.Components != null)
+        {
+            foreach (var c in target.Components)
+            {
+                if (c.Purl != null)
+                    existingPurls.Add(c.Purl);
+            }
+        }
+
+        var existingDepRefs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (target.Dependencies != null)
+        {
+            foreach (var d in target.Dependencies)
+            {
+                if (d.Ref != null)
+                    existingDepRefs.Add(d.Ref);
+            }
+        }
+
+        // Add the external BOM's root component as a component in the target
+        if (source.Metadata?.Component != null)
+        {
+            var rootComponent = source.Metadata.Component;
+            var rootRef = rootComponent.BomRef ?? rootComponent.Purl;
+
+            if (rootComponent.Purl == null || !existingPurls.Contains(rootComponent.Purl))
+            {
+                target.Components ??= [];
+                target.Components.Add(rootComponent);
+                if (rootComponent.Purl != null)
+                    existingPurls.Add(rootComponent.Purl);
+            }
+
+            // Wire the external BOM's root as a direct dependency of the target's root
+            var targetRootRef = target.Metadata?.Component?.BomRef
+                                ?? target.Metadata?.Component?.Purl;
+            if (targetRootRef != null && rootRef != null)
+            {
+                var rootDep = target.Dependencies?.FirstOrDefault(d => d.Ref == targetRootRef);
+                if (rootDep != null)
+                {
+                    rootDep.Dependencies ??= [];
+                    if (!rootDep.Dependencies.Any(d => d.Ref == rootRef))
+                        rootDep.Dependencies.Add(new Dependency { Ref = rootRef });
+                }
+            }
+        }
+
+        // Merge all components from the source, skipping duplicates by purl
+        if (source.Components != null)
+        {
+            foreach (var component in source.Components)
+            {
+                if (component.Purl != null && existingPurls.Contains(component.Purl))
+                    continue;
+
+                target.Components ??= [];
+                target.Components.Add(component);
+                if (component.Purl != null)
+                    existingPurls.Add(component.Purl);
+            }
+        }
+
+        // Merge dependency entries from the source, skipping refs already present
+        if (source.Dependencies != null)
+        {
+            foreach (var dep in source.Dependencies)
+            {
+                if (dep.Ref != null && existingDepRefs.Contains(dep.Ref))
+                    continue;
+
+                target.Dependencies ??= [];
+                target.Dependencies.Add(dep);
+                if (dep.Ref != null)
+                    existingDepRefs.Add(dep.Ref);
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Additional component injection
+    // -------------------------------------------------------------------------
+
+    private static void AddAdditionalComponent(Bom bom, Component component)
+    {
+        // Default BomRef to Purl if not set
+        component.BomRef ??= component.Purl;
+
+        // Skip duplicates (by purl)
+        if (component.Purl != null
+            && bom.Components?.Any(c =>
+                string.Equals(c.Purl, component.Purl, StringComparison.OrdinalIgnoreCase)) == true)
+        {
+            return;
+        }
+
+        bom.Components ??= [];
+        bom.Components.Add(component);
+
+        // Wire as a direct dependency of the root component
+        var rootRef = bom.Metadata?.Component?.BomRef ?? bom.Metadata?.Component?.Purl;
+        var componentRef = component.BomRef ?? component.Purl;
+
+        if (rootRef != null && componentRef != null)
+        {
+            var rootDep = bom.Dependencies?.FirstOrDefault(d => d.Ref == rootRef);
+            if (rootDep != null)
+            {
+                rootDep.Dependencies ??= [];
+                if (!rootDep.Dependencies.Any(d => d.Ref == componentRef))
+                    rootDep.Dependencies.Add(new Dependency { Ref = componentRef });
+            }
+        }
+
+        // Add an empty dependency entry for the component itself
+        if (componentRef != null)
+        {
+            bom.Dependencies ??= [];
+            if (!bom.Dependencies.Any(d => d.Ref == componentRef))
+                bom.Dependencies.Add(new Dependency { Ref = componentRef, Dependencies = [] });
         }
     }
 }
