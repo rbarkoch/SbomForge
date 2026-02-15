@@ -43,23 +43,47 @@ jobs:
       - name: Publish to NuGet
         shell: pwsh
         run: |
-          $packages = Get-ChildItem -Path Publish -Filter *.nupkg -Exclude *.symbols.nupkg, *.snupkg
-          foreach ($package in $packages) {
-            Write-Host "Publishing $($package.Name)..."
-            dotnet nuget push $package.FullName `
-              --api-key ${{ secrets.NUGET_API_KEY }} `
-              --source https://api.nuget.org/v3/index.json `
-              --skip-duplicate
+          # First, publish the main NuGet package(s)
+          $packages = Get-ChildItem -Path Publish -Filter *.nupkg | Where-Object { $_.Name -notlike '*.snupkg' }
+          
+          if ($packages.Count -eq 0) {
+            Write-Error "No .nupkg files found in Publish directory"
+            exit 1
           }
           
-          # Publish symbol packages
-          $symbolPackages = Get-ChildItem -Path Publish -Filter *.snupkg
-          foreach ($package in $symbolPackages) {
-            Write-Host "Publishing symbols $($package.Name)..."
+          foreach ($package in $packages) {
+            Write-Host "Publishing package: $($package.Name)..." -ForegroundColor Cyan
             dotnet nuget push $package.FullName `
               --api-key ${{ secrets.NUGET_API_KEY }} `
               --source https://api.nuget.org/v3/index.json `
               --skip-duplicate
+            
+            if ($LASTEXITCODE -ne 0) {
+              Write-Error "Failed to publish $($package.Name)"
+              exit $LASTEXITCODE
+            }
+            Write-Host "Successfully published $($package.Name)" -ForegroundColor Green
+          }
+          
+          # Then, publish symbol packages (must be done after main package)
+          $symbolPackages = Get-ChildItem -Path Publish -Filter *.snupkg -ErrorAction SilentlyContinue
+          
+          if ($symbolPackages) {
+            foreach ($package in $symbolPackages) {
+              Write-Host "Publishing symbols: $($package.Name)..." -ForegroundColor Cyan
+              dotnet nuget push $package.FullName `
+                --api-key ${{ secrets.NUGET_API_KEY }} `
+                --source https://api.nuget.org/v3/index.json `
+                --skip-duplicate
+              
+              if ($LASTEXITCODE -ne 0) {
+                Write-Warning "Failed to publish symbols $($package.Name), but continuing..."
+              } else {
+                Write-Host "Successfully published symbols $($package.Name)" -ForegroundColor Green
+              }
+            }
+          } else {
+            Write-Host "No symbol packages found to publish" -ForegroundColor Yellow
           }
 
       - name: Upload artifacts
