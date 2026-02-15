@@ -14,6 +14,7 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
 {
     private string? _basePath;
     private SbomConfiguration _component = new();
+    private ComponentConfiguration _tool = new();
 
     private List<ProjectConfiguration> _projects = [];
     private List<SbomConfiguration> _additionalComponents = [];
@@ -153,7 +154,7 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
 
         foreach ((DependencyGraph graph, SbomConfiguration config) in resolved)
         {
-            Composer.Composer composer = new(graph, config, basePath, projectRegistry);
+            Composer.Composer composer = new(graph, config, basePath, projectRegistry, _tool);
             ComposerResult composerResult = await composer.ComposeAsync();
 
             result.WrittenFilePaths.Add(composerResult.OutputPath);
@@ -190,6 +191,20 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
     public override SbomBuilder WithOutput(Action<OutputConfiguration>? output = null)
     {
         output?.Invoke(_component.Output);
+        return this;
+    }
+
+    /// <summary>
+    /// Configures the tool metadata included in every generated SBOM.
+    /// By default, the tool is identified as SbomForge with its assembly version.
+    /// Use this to override the version or other metadata when the assembly version
+    /// does not reflect the actual version (e.g., when SbomForge is referenced as a project reference).
+    /// </summary>
+    /// <param name="tool">Configuration action for tool component metadata.</param>
+    /// <returns>The builder instance for method chaining.</returns>
+    public SbomBuilder WithTool(Action<ComponentConfiguration>? tool = null)
+    {
+        tool?.Invoke(_tool);
         return this;
     }
 

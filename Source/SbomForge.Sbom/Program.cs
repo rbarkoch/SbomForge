@@ -18,6 +18,10 @@ var result = await new SbomBuilder()
             meta.Copyright = $"Copyright (c) {DateTime.UtcNow.Year} Ronnie Bar-Kochba";
         });
     })
+    .WithTool(tool =>
+    {
+        tool.Version = version;
+    })
     .WithOutput(output =>
     {
         output.OutputDirectory = "../Publish";

@@ -18,17 +18,20 @@ internal class Composer
     private readonly SbomConfiguration _config;
     private readonly string _basePath;
     private readonly IReadOnlyDictionary<string, ComponentConfiguration> _projectRegistry;
+    private readonly ComponentConfiguration _tool;
 
     public Composer(
         DependencyGraph graph,
         SbomConfiguration config,
         string basePath,
-        IReadOnlyDictionary<string, ComponentConfiguration> projectRegistry)
+        IReadOnlyDictionary<string, ComponentConfiguration> projectRegistry,
+        ComponentConfiguration tool)
     {
         _graph = graph;
         _config = config;
         _basePath = basePath;
         _projectRegistry = projectRegistry;
+        _tool = tool;
     }
 
     /// <summary>
@@ -231,11 +234,12 @@ internal class Composer
 
     // ───────────────────────────────── Metadata ─────────────────────────────────
 
-    private static Metadata BuildMetadata(ComponentConfiguration subject)
+    private Metadata BuildMetadata(ComponentConfiguration subject)
     {
         Metadata metadata = new()
         {
             Timestamp = DateTime.UtcNow,
+            Tools = BuildToolChoices(),
             Component = new Component
             {
                 Type = subject.Type != Component.Classification.Null
@@ -255,6 +259,43 @@ internal class Composer
         };
 
         return metadata;
+    }
+
+    /// <summary>
+    /// Builds the tool choices for SBOM metadata, applying defaults for any unset fields.
+    /// </summary>
+    private ToolChoices BuildToolChoices()
+    {
+        string name = !string.IsNullOrEmpty(_tool.Name) ? _tool.Name : "SbomForge";
+        string group = !string.IsNullOrEmpty(_tool.Group) ? _tool.Group : "SbomForge";
+        string version = !string.IsNullOrEmpty(_tool.Version) ? _tool.Version : VersionHelper.GetSbomForgeVersion();
+
+        Component toolComponent = new()
+        {
+            Type = _tool.Type != Component.Classification.Null
+                ? _tool.Type
+                : Component.Classification.Application,
+            Group = group,
+            Name = name,
+            Version = version,
+            Publisher = _tool.Publisher,
+            Description = _tool.Description,
+            ExternalReferences = _tool.ExternalReferences?.Count > 0
+                ? _tool.ExternalReferences
+                :
+                [
+                    new ExternalReference
+                    {
+                        Type = ExternalReference.ExternalReferenceType.Website,
+                        Url = "https://github.com/rbarkoch/SbomForge"
+                    }
+                ]
+        };
+
+        return new ToolChoices
+        {
+            Components = [toolComponent]
+        };
     }
 
     // ───────────────────────────── Package Components ────────────────────────────
