@@ -86,6 +86,17 @@ jobs:
             Write-Host "No symbol packages found to publish" -ForegroundColor Yellow
           }
 
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            Publish/*.nupkg
+            Publish/*.snupkg
+            Publish/*.sbom.json
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
