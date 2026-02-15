@@ -1,5 +1,9 @@
 namespace SbomForge.Configuration;
 
+/// <summary>
+/// Configuration for including an external SBOM file in the generated output.
+/// Allows loading and optionally overriding metadata from external SBOMs.
+/// </summary>
 public class ExternalComponentConfiguration
 {
     /// <summary>

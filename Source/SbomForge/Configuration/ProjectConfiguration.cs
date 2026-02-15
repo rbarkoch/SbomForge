@@ -1,5 +1,9 @@
 namespace SbomForge.Configuration;
 
+/// <summary>
+/// Configuration for a single project to be included in SBOM generation.
+/// Combines project path with per-project SBOM configuration overrides.
+/// </summary>
 public class ProjectConfiguration
 {
     /// <summary>

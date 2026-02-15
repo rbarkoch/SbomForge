@@ -1,5 +1,9 @@
 namespace SbomForge.Configuration;
 
+/// <summary>
+/// Configuration for filtering packages and projects from the generated SBOM.
+/// Supports exclusion by package ID, project name, package prefix, and test projects.
+/// </summary>
 public class FiltersConfiguration
 {
     /// <summary>Exact package IDs to exclude.</summary>

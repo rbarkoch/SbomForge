@@ -6,6 +6,10 @@ using SbomForge.Utilities;
 
 namespace SbomForge;
 
+/// <summary>
+/// Main entry point for generating CycloneDX 1.7 SBOMs from .NET projects.
+/// Provides a fluent API for configuring and building Software Bill of Materials documents.
+/// </summary>
 public class SbomBuilder : BuilderBase<SbomBuilder>
 {
     private string? _basePath;
@@ -15,12 +19,25 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
     private List<SbomConfiguration> _additionalComponents = [];
     private List<ExternalComponentConfiguration> _externalComponents = [];
     
+    /// <summary>
+    /// Sets the base path for resolving relative project paths.
+    /// All relative project paths specified in <see cref="ForProject"/> will be resolved relative to this path.
+    /// </summary>
+    /// <param name="basePath">The base directory path.</param>
+    /// <returns>The builder instance for method chaining.</returns>
     public SbomBuilder WithBasePath(string basePath)
     {
         _basePath = basePath;
         return this;
     }
 
+    /// <summary>
+    /// Automatically sets the base path by searching for a solution file in the current or parent directories.
+    /// Supports both .sln and .slnx file extensions.
+    /// </summary>
+    /// <param name="solutionName">The solution file name (with or without extension).</param>
+    /// <returns>The builder instance for method chaining.</returns>
+    /// <exception cref="FileNotFoundException">Thrown when the solution file cannot be found in any parent directory.</exception>
     public SbomBuilder WithBasePathFromSolution(string solutionName)
     {
         // Get the current working directory
@@ -61,6 +78,13 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
         throw new FileNotFoundException($"Solution file '{solutionName}' not found in any parent directory.");
     }
 
+    /// <summary>
+    /// Adds a project to the SBOM generation pipeline.
+    /// Each project will generate its own SBOM file with its dependencies.
+    /// </summary>
+    /// <param name="projectPath">Path to the .csproj file (absolute or relative to the base path).</param>
+    /// <param name="component">Optional configuration action for per-project settings using <see cref="ComponentBuilder"/>.</param>
+    /// <returns>The builder instance for method chaining.</returns>
     public SbomBuilder ForProject(string projectPath, Action<ComponentBuilder>? component = null)
     {
         ComponentBuilder builder = new();
@@ -76,6 +100,11 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
         return this;
     }
 
+    /// <summary>
+    /// Executes the SBOM generation process for all configured projects.
+    /// Performs dependency resolution, applies filters, generates BOMs, and writes output files.
+    /// </summary>
+    /// <returns>A <see cref="SbomBuildResult"/> containing all generated BOMs and their file paths.</returns>
     public async Task<SbomBuildResult> BuildAsync()
     {
         string basePath = _basePath ?? Directory.GetCurrentDirectory();
@@ -134,30 +163,37 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
         return result;
     }
 
+    /// <inheritdoc />
     public override SbomBuilder WithMetadata(Action<ComponentConfiguration>? component = null)
     {
         component?.Invoke(_component.Component);
         return this;
     }
 
+    /// <inheritdoc />
     public override SbomBuilder WithFilters(Action<FiltersConfiguration>? filters = null)
     {
         filters?.Invoke(_component.Filters);
         return this;
     }
 
+    /// <inheritdoc />
+    /// <inheritdoc />
     public override SbomBuilder WithResolution(Action<ResolutionConfiguration>? resolution = null)
     {
         resolution?.Invoke(_component.Resolution);
         return this;
     }
 
+    /// <inheritdoc />
+    /// <inheritdoc />
     public override SbomBuilder WithOutput(Action<OutputConfiguration>? output = null)
     {
         output?.Invoke(_component.Output);
         return this;
     }
 
+    /// <inheritdoc />
     public override SbomBuilder WithExternal(string path, Action<ComponentConfiguration>? component = null)
     {
         ComponentConfiguration? componentMetadata = new();
@@ -174,6 +210,7 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
         return this;
     }
 
+    /// <inheritdoc />
     public override SbomBuilder WithComponent(Action<ComponentConfiguration> component)
     {
         throw new NotImplementedException();

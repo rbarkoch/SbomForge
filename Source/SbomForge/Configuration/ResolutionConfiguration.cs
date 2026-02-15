@@ -1,5 +1,9 @@
 namespace SbomForge.Configuration;
 
+/// <summary>
+/// Configuration for dependency resolution behavior.
+/// Controls whether to include transitive dependencies and which target framework to use.
+/// </summary>
 public class ResolutionConfiguration
 {
     /// <summary>Include transitive (indirect) dependencies, not just direct refs.</summary>

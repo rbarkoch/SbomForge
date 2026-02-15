@@ -1,5 +1,9 @@
 namespace SbomForge.Configuration;
 
+/// <summary>
+/// Root configuration container for SBOM generation.
+/// Combines component metadata, dependency resolution, filtering, and output settings.
+/// </summary>
 public class SbomConfiguration
 {
     /// <summary>
