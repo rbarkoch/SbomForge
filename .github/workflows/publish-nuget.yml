@@ -1,0 +1,70 @@
+name: Publish NuGet Package
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag -replace '^v', ''
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "Version: $version"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore Source/SbomForge.slnx
+
+      - name: Build and Pack
+        shell: pwsh
+        run: |
+          ./Publish-Solution.ps1 -Version ${{ steps.version.outputs.VERSION }} -Configuration Release
+
+      - name: Publish to NuGet
+        shell: pwsh
+        run: |
+          $packages = Get-ChildItem -Path Publish -Filter *.nupkg -Exclude *.symbols.nupkg, *.snupkg
+          foreach ($package in $packages) {
+            Write-Host "Publishing $($package.Name)..."
+            dotnet nuget push $package.FullName `
+              --api-key ${{ secrets.NUGET_API_KEY }} `
+              --source https://api.nuget.org/v3/index.json `
+              --skip-duplicate
+          }
+          
+          # Publish symbol packages
+          $symbolPackages = Get-ChildItem -Path Publish -Filter *.snupkg
+          foreach ($package in $symbolPackages) {
+            Write-Host "Publishing symbols $($package.Name)..."
+            dotnet nuget push $package.FullName `
+              --api-key ${{ secrets.NUGET_API_KEY }} `
+              --source https://api.nuget.org/v3/index.json `
+              --skip-duplicate
+          }
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages-${{ steps.version.outputs.VERSION }}
+          path: Publish/
+          retention-days: 30
