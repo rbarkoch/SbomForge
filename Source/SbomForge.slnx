@@ -7,5 +7,6 @@
     <Project Path="ExampleDeployment/ExampleSbom/ExampleSbom.csproj" />
   </Folder>
   <Project Path="SbomForge.Sbom/SbomForge.Sbom.csproj" />
+  <Project Path="SbomForge.Tests/SbomForge.Tests.csproj" />
   <Project Path="SbomForge/SbomForge.csproj" />
 </Solution>
