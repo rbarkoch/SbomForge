@@ -31,7 +31,16 @@ public class ComponentBuilder : BuilderBase<ComponentBuilder>
     /// <inheritdoc />
     public override ComponentBuilder WithExternal(string path, Action<ComponentConfiguration>? component = null)
     {
-        throw new NotImplementedException();
+        ExternalComponentConfiguration externalConfig = new()
+        {
+            ExternalPath = path
+        };
+        
+        component?.Invoke(externalConfig.Component);
+
+        _component.ExternalDependencies.Add(externalConfig);
+        
+        return this;
     }
 
     /// <inheritdoc />

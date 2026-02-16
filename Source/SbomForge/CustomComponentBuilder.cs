@@ -71,7 +71,16 @@ public class CustomComponentBuilder : BuilderBase<CustomComponentBuilder>
     /// <inheritdoc />
     public override CustomComponentBuilder WithExternal(string path, Action<ComponentConfiguration>? component = null)
     {
-        throw new NotImplementedException("WithExternal is not yet supported for custom components.");
+        ExternalComponentConfiguration externalConfig = new()
+        {
+            ExternalPath = path
+        };
+        
+        component?.Invoke(externalConfig.Component);
+
+        _config.ExternalDependencies.Add(externalConfig);
+        
+        return this;
     }
 
     /// <inheritdoc />

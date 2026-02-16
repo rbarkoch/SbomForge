@@ -31,4 +31,10 @@ public class SbomConfiguration
     /// that cannot be auto-detected (e.g., Docker images, non-.NET dependencies).
     /// </summary>
     public List<ComponentConfiguration> CustomComponents { get; set; } = [];
+
+    /// <summary>
+    /// External SBOM dependencies to merge into the SBOM.
+    /// External SBOMs will be loaded and merged per ResolutionConfiguration.IncludeTransitive.
+    /// </summary>
+    public List<ExternalComponentConfiguration> ExternalDependencies { get; set; } = [];
 }

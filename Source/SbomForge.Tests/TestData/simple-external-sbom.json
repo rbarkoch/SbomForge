@@ -1,0 +1,24 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "serialNumber": "urn:uuid:87654321-4321-4321-4321-210987654321",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-02-15T00:00:00Z",
+    "component": {
+      "type": "application",
+      "name": "simple-external-app",
+      "version": "2.0.0",
+      "bom-ref": "pkg:generic/simple-external-app@2.0.0",
+      "purl": "pkg:generic/simple-external-app@2.0.0",
+      "description": "A simple external application without dependencies"
+    }
+  },
+  "components": [],
+  "dependencies": [
+    {
+      "ref": "pkg:generic/simple-external-app@2.0.0",
+      "dependsOn": []
+    }
+  ]
+}

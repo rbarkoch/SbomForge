@@ -229,6 +229,159 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
             }
         }
 
+        // ── Pass 1d: Load and register external SBOMs ──
+
+        // Dictionary to store loaded external BOMs for later composition
+        // Key: (source identifier, ExternalComponentConfiguration), Value: loaded Bom
+        Dictionary<(string Source, ExternalComponentConfiguration Config), Bom> loadedExternalBoms = [];
+
+        // Helper to load and register an external SBOM
+        void LoadAndRegisterExternalBom(ExternalComponentConfiguration externalConfig, string source)
+        {
+            // Resolve path (absolute or relative to basePath)
+            string externalPath = Path.IsPathRooted(externalConfig.ExternalPath)
+                ? externalConfig.ExternalPath
+                : Path.GetFullPath(Path.Combine(basePath, externalConfig.ExternalPath));
+
+            // Load the external SBOM
+            Bom externalBom = Composer.Composer.DeserializeBom(externalPath);
+
+            // Get the main component from the external SBOM's metadata
+            Component? externalMainComponent = externalBom.Metadata?.Component;
+            if (externalMainComponent == null)
+            {
+                throw new InvalidOperationException(
+                    $"External SBOM at '{externalPath}' does not have a metadata.component defined.");
+            }
+
+            // Create ComponentConfiguration from external component
+            ComponentConfiguration mainComponent = new()
+            {
+                Name = externalMainComponent.Name,
+                Version = externalMainComponent.Version,
+                Description = externalMainComponent.Description,
+                Type = externalMainComponent.Type,
+                BomRef = externalMainComponent.BomRef,
+                Purl = externalMainComponent.Purl,
+                Group = externalMainComponent.Group,
+                Publisher = externalMainComponent.Publisher,
+                Copyright = externalMainComponent.Copyright,
+                Supplier = externalMainComponent.Supplier,
+                Licenses = externalMainComponent.Licenses
+            };
+
+            // Apply metadata overrides from configuration
+            if (!string.IsNullOrEmpty(externalConfig.Component.Name))
+                mainComponent.Name = externalConfig.Component.Name;
+            if (!string.IsNullOrEmpty(externalConfig.Component.Version))
+                mainComponent.Version = externalConfig.Component.Version;
+            if (!string.IsNullOrEmpty(externalConfig.Component.Description))
+                mainComponent.Description = externalConfig.Component.Description;
+            if (externalConfig.Component.Type != Component.Classification.Null)
+                mainComponent.Type = externalConfig.Component.Type;
+            if (!string.IsNullOrEmpty(externalConfig.Component.BomRef))
+                mainComponent.BomRef = externalConfig.Component.BomRef;
+            if (!string.IsNullOrEmpty(externalConfig.Component.Purl))
+                mainComponent.Purl = externalConfig.Component.Purl;
+            if (!string.IsNullOrEmpty(externalConfig.Component.Group))
+                mainComponent.Group = externalConfig.Component.Group;
+            if (!string.IsNullOrEmpty(externalConfig.Component.Publisher))
+                mainComponent.Publisher = externalConfig.Component.Publisher;
+            if (!string.IsNullOrEmpty(externalConfig.Component.Copyright))
+                mainComponent.Copyright = externalConfig.Component.Copyright;
+            if (externalConfig.Component.Supplier != null)
+                mainComponent.Supplier = externalConfig.Component.Supplier;
+            if (externalConfig.Component.Licenses != null && externalConfig.Component.Licenses.Count > 0)
+                mainComponent.Licenses = externalConfig.Component.Licenses;
+
+            // Handle BomRef collision by prefixing if necessary
+            string originalBomRef = mainComponent.BomRef ?? $"pkg:generic/{mainComponent.Name}@{mainComponent.Version}";
+            string bomRef = originalBomRef;
+            
+            if (projectRegistry.ContainsKey(bomRef))
+            {
+                // Collision detected - prefix with "external:"
+                bomRef = $"external:{bomRef}";
+                mainComponent.BomRef = bomRef;
+                
+                // Also update all references in the external BOM's dependency tree
+                if (externalBom.Dependencies != null)
+                {
+                    foreach (var dep in externalBom.Dependencies)
+                    {
+                        if (dep.Ref == originalBomRef)
+                            dep.Ref = bomRef;
+                        
+                        if (dep.Dependencies != null)
+                        {
+                            for (int i = 0; i < dep.Dependencies.Count; i++)
+                            {
+                                if (dep.Dependencies[i].Ref == originalBomRef)
+                                    dep.Dependencies[i].Ref = bomRef;
+                            }
+                        }
+                    }
+                }
+                
+                // Update component references in external BOM
+                if (externalBom.Components != null)
+                {
+                    foreach (var comp in externalBom.Components)
+                    {
+                        if (comp.BomRef == originalBomRef)
+                            comp.BomRef = bomRef;
+                    }
+                }
+            }
+
+            // Register the main component in the project registry
+            projectRegistry[bomRef] = mainComponent;
+            
+            if (!string.IsNullOrEmpty(mainComponent.Name))
+            {
+                if (!projectRegistry.ContainsKey(mainComponent.Name))
+                    projectRegistry[mainComponent.Name] = mainComponent;
+            }
+
+            // Store the loaded BOM for Pass 2
+            loadedExternalBoms[(source, externalConfig)] = externalBom;
+        }
+
+        // Process global external components
+        foreach (ExternalComponentConfiguration externalConfig in _externalComponents)
+        {
+            LoadAndRegisterExternalBom(externalConfig, "global");
+        }
+
+        // Process per-project external components
+        for (int i = 0; i < _projects.Count; i++)
+        {
+            ProjectConfiguration project = _projects[i];
+            SbomConfiguration effectiveConfig = _component.Merge(project.Sbom);
+            
+            // Resolve project path to absolute to match graph.SourceProjectPath in Pass 2
+            string projectPath = Path.IsPathRooted(project.ProjectPath)
+                ? project.ProjectPath
+                : Path.GetFullPath(Path.Combine(basePath, project.ProjectPath));
+            
+            foreach (ExternalComponentConfiguration externalConfig in effectiveConfig.ExternalDependencies)
+            {
+                LoadAndRegisterExternalBom(externalConfig, $"project:{projectPath}");
+            }
+        }
+
+        // Process custom component external components
+        for (int i = 0; i < _customComponents.Count; i++)
+        {
+            CustomComponentConfiguration customComp = _customComponents[i];
+            SbomConfiguration effectiveConfig = _component.Merge(customComp.Sbom);
+            
+            foreach (ExternalComponentConfiguration externalConfig in customComp.ExternalDependencies)
+            {
+                LoadAndRegisterExternalBom(externalConfig, $"custom:{effectiveConfig.Component.Name ?? i.ToString()}");
+            }
+        }
+
         // ── Pass 2: Compose SBOMs ──
 
         // Build a lookup from BomRef to DependencyGraph for transitive dependencies
@@ -246,8 +399,99 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
             }
         }
 
+        // Helper to add external SBOM components to a DependencyGraph
+        void AddExternalDependenciesToGraph(
+            DependencyGraph graph,
+            List<ExternalComponentConfiguration> externalConfigs,
+            string source,
+            bool includeTransitive)
+        {
+            HashSet<string> addedComponents = new(StringComparer.OrdinalIgnoreCase);
+            
+            // Track already added packages/projects to avoid duplicates
+            foreach (var pkg in graph.Packages)
+                addedComponents.Add($"{pkg.Id}/{pkg.Version}");
+            foreach (var proj in graph.ProjectReferences)
+                addedComponents.Add($"{proj.Name}/{proj.Version}");
+
+            foreach (ExternalComponentConfiguration externalConfig in externalConfigs)
+            {
+                // Find the loaded BOM
+                if (!loadedExternalBoms.TryGetValue((source, externalConfig), out Bom? externalBom))
+                    continue;
+
+                Component? mainComponent = externalBom.Metadata?.Component;
+                if (mainComponent == null)
+                    continue;
+
+                // Add main component as a project reference
+                string mainKey = $"{mainComponent.Name}/{mainComponent.Version}";
+                if (!addedComponents.Contains(mainKey))
+                {
+                    graph.ProjectReferences.Add(new ResolvedProjectReference
+                    {
+                        Name = mainComponent.Name ?? "external-component",
+                        Version = mainComponent.Version,
+                        ResolvedPath = null,
+                        DependsOn = []
+                    });
+                    addedComponents.Add(mainKey);
+                }
+
+                // If IncludeTransitive is true, add all components from the external SBOM
+                if (includeTransitive && externalBom.Components != null)
+                {
+                    foreach (Component comp in externalBom.Components)
+                    {
+                        string componentKey = $"{comp.Name}/{comp.Version}";
+                        if (addedComponents.Contains(componentKey))
+                            continue;
+
+                        // Determine if this is a NuGet package or another type of component
+                        bool isNuGetPackage = comp.Purl?.StartsWith("pkg:nuget/", StringComparison.OrdinalIgnoreCase) ?? false;
+
+                        if (isNuGetPackage)
+                        {
+                            // Add as a package
+                            graph.Packages.Add(new ResolvedPackage
+                            {
+                                Id = comp.Name ?? "unknown",
+                                Version = comp.Version ?? "0.0.0",
+                                IsDirect = false, // External dependencies are transitive
+                                LicenseExpression = comp.Licenses?.FirstOrDefault()?.License?.Id,
+                                Description = comp.Description,
+                                ProjectUrl = comp.ExternalReferences?.FirstOrDefault(r => r.Type == CycloneDX.Models.ExternalReference.ExternalReferenceType.Website)?.Url?.ToString(),
+                                PackageHash = null
+                            });
+                        }
+                        else
+                        {
+                            // Add as a project reference
+                            graph.ProjectReferences.Add(new ResolvedProjectReference
+                            {
+                                Name = comp.Name ?? "unknown",
+                                Version = comp.Version,
+                                ResolvedPath = null,
+                                DependsOn = []
+                            });
+                        }
+
+                        addedComponents.Add(componentKey);
+                    }
+                }
+            }
+        }
+
         foreach ((DependencyGraph graph, SbomConfiguration config) in resolved)
         {
+            // Add global external dependencies to this project's graph
+            // Default to true if IncludeTransitive is not explicitly set
+            bool includeTransitive = config.Resolution.IncludeTransitive ?? true;
+            AddExternalDependenciesToGraph(graph, _externalComponents, "global", includeTransitive);
+            
+            // Add project-specific external dependencies
+            AddExternalDependenciesToGraph(graph, config.ExternalDependencies, $"project:{graph.SourceProjectPath}", includeTransitive);
+
             Composer.Composer composer = new(graph, config, basePath, projectRegistry, _tool);
             ComposerResult composerResult = await composer.ComposeAsync();
 
@@ -354,6 +598,14 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
                         $"Available components: {available}");
                 }
             }
+
+            // Add global external dependencies to this custom component's graph
+            // Default to true if IncludeTransitive is not explicitly set
+            bool includeTransitive = effectiveConfig.Resolution.IncludeTransitive ?? true;
+            AddExternalDependenciesToGraph(graph, _externalComponents, "global", includeTransitive);
+            
+            // Add custom component-specific external dependencies
+            AddExternalDependenciesToGraph(graph, customComp.ExternalDependencies, $"custom:{effectiveConfig.Component.Name ?? customComp.GetHashCode().ToString()}", includeTransitive);
 
             // Compose SBOM
             Composer.Composer composer = new(graph, effectiveConfig, basePath, projectRegistry, _tool);

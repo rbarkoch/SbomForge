@@ -1,0 +1,52 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "serialNumber": "urn:uuid:12345678-1234-1234-1234-123456789012",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-02-15T00:00:00Z",
+    "component": {
+      "type": "library",
+      "name": "external-library",
+      "version": "1.5.0",
+      "bom-ref": "pkg:generic/external-library@1.5.0",
+      "purl": "pkg:generic/external-library@1.5.0",
+      "description": "An external library with dependencies"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "external-dep-1",
+      "version": "2.0.0",
+      "bom-ref": "pkg:nuget/external-dep-1@2.0.0",
+      "purl": "pkg:nuget/external-dep-1@2.0.0",
+      "description": "First external dependency"
+    },
+    {
+      "type": "library",
+      "name": "external-dep-2",
+      "version": "3.1.0",
+      "bom-ref": "pkg:nuget/external-dep-2@3.1.0",
+      "purl": "pkg:nuget/external-dep-2@3.1.0",
+      "description": "Second external dependency"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:generic/external-library@1.5.0",
+      "dependsOn": [
+        "pkg:nuget/external-dep-1@2.0.0",
+        "pkg:nuget/external-dep-2@3.1.0"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/external-dep-1@2.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:nuget/external-dep-2@3.1.0",
+      "dependsOn": []
+    }
+  ]
+}

@@ -35,7 +35,11 @@ internal static class Extensions
 
         foreach(ResolutionConfiguration config in other)
         {
-            merged.IncludeTransitive = config.IncludeTransitive;
+            // Only override if explicitly set (not null)
+            if (config.IncludeTransitive.HasValue)
+            {
+                merged.IncludeTransitive = config.IncludeTransitive;
+            }
             if (!string.IsNullOrEmpty(config.TargetFramework))
             {
                 merged.TargetFramework = config.TargetFramework;
@@ -152,6 +156,12 @@ internal static class Extensions
         foreach (SbomConfiguration config in allConfigs)
         {
             merged.CustomComponents.AddRange(config.CustomComponents);
+        }
+
+        // Merge external dependencies from all configurations (combine all lists)
+        foreach (SbomConfiguration config in allConfigs)
+        {
+            merged.ExternalDependencies.AddRange(config.ExternalDependencies);
         }
 
         return merged;

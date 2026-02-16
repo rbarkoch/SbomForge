@@ -519,4 +519,46 @@ internal class Composer
 
         return Task.FromResult(fullPath);
     }
+
+    /// <summary>
+    /// Deserializes a CycloneDX SBOM from a JSON file.
+    /// </summary>
+    /// <param name="filePath">Absolute path to the SBOM file.</param>
+    /// <returns>Deserialized BOM object.</returns>
+    /// <exception cref="FileNotFoundException">Thrown when the file does not exist.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the file is not valid CycloneDX JSON.</exception>
+    internal static Bom DeserializeBom(string filePath)
+    {
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException($"External SBOM file not found: {filePath}");
+        }
+
+        string json;
+        try
+        {
+            json = File.ReadAllText(filePath);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to read external SBOM file: {filePath}", ex);
+        }
+
+        Bom? bom;
+        try
+        {
+            bom = Serializer.Deserialize(json);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to deserialize external SBOM file as CycloneDX JSON: {filePath}", ex);
+        }
+
+        if (bom == null)
+        {
+            throw new InvalidOperationException($"External SBOM file deserialized to null: {filePath}");
+        }
+
+        return bom;
+    }
 }

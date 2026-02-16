@@ -23,4 +23,10 @@ public class CustomComponentConfiguration
     /// These will be resolved to BomRefs during the build process.
     /// </summary>
     public List<string> DependsOnProjectPaths { get; set; } = [];
+
+    /// <summary>
+    /// List of external SBOM dependencies for this custom component.
+    /// External SBOMs will be loaded and merged per ResolutionConfiguration.IncludeTransitive.
+    /// </summary>
+    public List<ExternalComponentConfiguration> ExternalDependencies { get; set; } = [];
 }
