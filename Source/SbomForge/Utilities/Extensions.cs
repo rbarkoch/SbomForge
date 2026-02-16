@@ -148,6 +148,12 @@ internal static class Extensions
             }
         }
 
+        // Merge custom components from all configurations (combine all lists)
+        foreach (SbomConfiguration config in allConfigs)
+        {
+            merged.CustomComponents.AddRange(config.CustomComponents);
+        }
+
         return merged;
     }
 

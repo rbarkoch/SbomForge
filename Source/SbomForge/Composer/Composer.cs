@@ -179,6 +179,20 @@ internal class Composer
             rootDep.Dependencies.Add(new Dependency { Ref = component.BomRef });
         }
 
+        // ── Custom components ──
+
+        foreach (ComponentConfiguration customComp in config.CustomComponents)
+        {
+            Component component = BuildCustomComponent(customComp);
+            bom.Components.Add(component);
+
+            // Add as direct dependency unless scope is Excluded
+            if (customComp.Scope != Component.ComponentScope.Excluded)
+            {
+                rootDep.Dependencies.Add(new Dependency { Ref = component.BomRef });
+            }
+        }
+
         bom.Dependencies.Add(rootDep);
 
         // ── Build nested dependency nodes ──
@@ -431,6 +445,45 @@ internal class Composer
             Version = fallbackVersion,
             Purl = fallbackPurl,
             Scope = Component.ComponentScope.Required
+        };
+    }
+
+    // ──────────────────────── Custom Components ──────────────────────────
+
+    /// <summary>
+    /// Builds a <see cref="Component"/> from a manually-specified <see cref="ComponentConfiguration"/>.
+    /// Used for custom dependencies that cannot be auto-detected (e.g., Docker images, non-.NET packages).
+    /// </summary>
+    private static Component BuildCustomComponent(ComponentConfiguration config)
+    {
+        // Ensure BomRef is set
+        string bomRef = config.BomRef
+            ?? config.Purl
+            ?? $"pkg:generic/{config.Name ?? "unknown"}@{config.Version ?? "0.0.0"}";
+
+        // Ensure Purl is set
+        string purl = config.Purl ?? bomRef;
+
+        return new Component
+        {
+            Type = config.Type != Component.Classification.Null
+                ? config.Type
+                : Component.Classification.Library,
+            BomRef = bomRef,
+            Name = config.Name,
+            Version = config.Version,
+            Description = config.Description,
+            Purl = purl,
+            Publisher = config.Publisher,
+            Copyright = config.Copyright,
+            Supplier = config.Supplier,
+            Group = config.Group,
+            Licenses = config.Licenses,
+            ExternalReferences = config.ExternalReferences,
+            Hashes = config.Hashes,
+            Properties = config.Properties,
+            Evidence = config.Evidence,
+            Scope = config.Scope
         };
     }
 

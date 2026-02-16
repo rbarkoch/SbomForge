@@ -19,7 +19,12 @@ public class ComponentBuilder : BuilderBase<ComponentBuilder>
     /// <inheritdoc />
     public override ComponentBuilder WithComponent(Action<ComponentConfiguration> component)
     {
-        throw new NotImplementedException();
+        ComponentConfiguration config = new();
+        component(config);
+        
+        _component.CustomComponents.Add(config);
+        
+        return this;
     }
 
     /// <inheritdoc />

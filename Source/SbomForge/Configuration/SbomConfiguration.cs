@@ -25,4 +25,10 @@ public class SbomConfiguration
     /// Properties indicating how to output the SBOM. May be an override for global output properties.
     /// </summary>
     public OutputConfiguration Output { get; } = new();
+
+    /// <summary>
+    /// Custom components to include in the SBOM. These are manually-specified dependencies
+    /// that cannot be auto-detected (e.g., Docker images, non-.NET dependencies).
+    /// </summary>
+    public List<ComponentConfiguration> CustomComponents { get; set; } = [];
 }

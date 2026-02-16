@@ -17,6 +17,7 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
     private ComponentConfiguration _tool = new();
 
     private List<ProjectConfiguration> _projects = [];
+    private List<CustomComponentConfiguration> _customComponents = [];
     private List<SbomConfiguration> _additionalComponents = [];
     private List<ExternalComponentConfiguration> _externalComponents = [];
     
@@ -102,6 +103,22 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
     }
 
     /// <summary>
+    /// Adds a custom component to the SBOM generation pipeline.
+    /// This allows creating SBOMs for non-.NET components (Docker containers, npm packages, etc.)
+    /// that can depend on .NET projects with cross-SBOM consistency.
+    /// </summary>
+    /// <param name="component">Configuration action for the custom component using <see cref="CustomComponentBuilder"/>.</param>
+    /// <returns>The builder instance for method chaining.</returns>
+    public SbomBuilder ForComponent(Action<CustomComponentBuilder> component)
+    {
+        CustomComponentBuilder builder = new();
+        component(builder);
+
+        _customComponents.Add(builder.Configuration);
+        return this;
+    }
+
+    /// <summary>
     /// Executes the SBOM generation process for all configured projects.
     /// Performs dependency resolution, applies filters, generates BOMs, and writes output files.
     /// </summary>
@@ -148,13 +165,198 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
                 projectRegistry.Add(absolutePath, effectiveConfig.Component);
             if (!projectRegistry.ContainsKey(graph.ProjectName))
                 projectRegistry.Add(graph.ProjectName, effectiveConfig.Component);
+            
+            // Also register by BomRef for cross-component dependencies
+            if (!string.IsNullOrEmpty(effectiveConfig.Component.BomRef))
+            {
+                if (!projectRegistry.ContainsKey(effectiveConfig.Component.BomRef))
+                    projectRegistry.Add(effectiveConfig.Component.BomRef, effectiveConfig.Component);
+            }
+        }
+
+        // ── Pass 1b: Register custom components in registry ──
+
+        foreach (CustomComponentConfiguration customComp in _customComponents)
+        {
+            // Merge global config with per-component overrides
+            SbomConfiguration effectiveConfig = _component.Merge(customComp.Sbom);
+
+            // Ensure BomRef is set
+            if (string.IsNullOrEmpty(effectiveConfig.Component.BomRef))
+            {
+                string name = effectiveConfig.Component.Name ?? "custom-component";
+                string version = effectiveConfig.Component.Version ?? "0.0.0";
+                effectiveConfig.Component.BomRef = effectiveConfig.Component.Purl
+                    ?? $"pkg:generic/{name}@{version}";
+            }
+
+            // Register by BomRef (primary key)
+            if (!projectRegistry.ContainsKey(effectiveConfig.Component.BomRef))
+                projectRegistry.Add(effectiveConfig.Component.BomRef, effectiveConfig.Component);
+
+            // Register by Name (secondary key for convenience)
+            if (!string.IsNullOrEmpty(effectiveConfig.Component.Name))
+            {
+                if (!projectRegistry.ContainsKey(effectiveConfig.Component.Name))
+                    projectRegistry.Add(effectiveConfig.Component.Name, effectiveConfig.Component);
+            }
+        }
+
+        // ── Pass 1c: Resolve project paths to BomRefs for custom components ──
+
+        foreach (CustomComponentConfiguration customComp in _customComponents)
+        {
+            // Resolve project paths to BomRefs
+            foreach (string projectPath in customComp.DependsOnProjectPaths)
+            {
+                string resolvedPath = Path.IsPathRooted(projectPath)
+                    ? projectPath
+                    : Path.GetFullPath(Path.Combine(basePath, projectPath));
+
+                if (projectRegistry.TryGetValue(resolvedPath, out ComponentConfiguration? projConfig))
+                {
+                    // Add the project's BomRef to the explicit BomRef dependencies
+                    string bomRef = projConfig.BomRef ?? throw new InvalidOperationException(
+                        $"Project '{projectPath}' does not have a BomRef set.");
+                    customComp.DependsOnBomRefs.Add(bomRef);
+                }
+                else
+                {
+                    throw new InvalidOperationException(
+                        $"Custom component depends on project '{projectPath}', but it was not found in the registry. " +
+                        $"Ensure the project is registered via ForProject() before this component.");
+                }
+            }
         }
 
         // ── Pass 2: Compose SBOMs ──
 
+        // Build a lookup from BomRef to DependencyGraph for transitive dependencies
+        Dictionary<string, DependencyGraph> dependencyGraphLookup = new(StringComparer.OrdinalIgnoreCase);
+        foreach ((DependencyGraph graph, SbomConfiguration config) in resolved)
+        {
+            if (!string.IsNullOrEmpty(config.Component.BomRef))
+            {
+                dependencyGraphLookup[config.Component.BomRef] = graph;
+            }
+            dependencyGraphLookup[graph.ProjectName] = graph;
+            if (!string.IsNullOrEmpty(graph.SourceProjectPath))
+            {
+                dependencyGraphLookup[graph.SourceProjectPath] = graph;
+            }
+        }
+
         foreach ((DependencyGraph graph, SbomConfiguration config) in resolved)
         {
             Composer.Composer composer = new(graph, config, basePath, projectRegistry, _tool);
+            ComposerResult composerResult = await composer.ComposeAsync();
+
+            result.WrittenFilePaths.Add(composerResult.OutputPath);
+            result.Boms[graph.ProjectName] = composerResult.Bom;
+        }
+
+        // ── Pass 2b: Compose custom component SBOMs ──
+
+        foreach (CustomComponentConfiguration customComp in _customComponents)
+        {
+            // Merge global config with per-component overrides
+            SbomConfiguration effectiveConfig = _component.Merge(customComp.Sbom);
+
+            // Build dependency graph manually from references
+            DependencyGraph graph = new()
+            {
+                ProjectName = effectiveConfig.Component.Name ?? "custom-component",
+                SourceProjectPath = "",
+                Packages = [],
+                ProjectReferences = []
+            };
+
+            // Track which packages and projects we've already added to avoid duplicates
+            HashSet<string> addedPackages = new(StringComparer.OrdinalIgnoreCase);
+            HashSet<string> addedProjects = new(StringComparer.OrdinalIgnoreCase);
+
+            // Resolve each BomRef dependency
+            foreach (string bomRef in customComp.DependsOnBomRefs)
+            {
+                if (projectRegistry.TryGetValue(bomRef, out ComponentConfiguration? depConfig))
+                {
+                    // Add as project reference for dependency tracking (check for duplicates first)
+                    string projectKey = $"{depConfig.Name ?? bomRef}/{depConfig.Version ?? "0.0.0"}";
+                    if (!addedProjects.Contains(projectKey))
+                    {
+                        graph.ProjectReferences.Add(new ResolvedProjectReference
+                        {
+                            Name = depConfig.Name ?? bomRef,
+                            Version = depConfig.Version,
+                            ResolvedPath = null,
+                            DependsOn = []
+                        });
+                        addedProjects.Add(projectKey);
+                    }
+
+                    // Include transitive dependencies if this is a .NET project
+                    if (dependencyGraphLookup.TryGetValue(bomRef, out DependencyGraph? projectGraph))
+                    {
+                        // Add all packages from the referenced project
+                        foreach (ResolvedPackage pkg in projectGraph.Packages)
+                        {
+                            string packageKey = $"{pkg.Id}/{pkg.Version}";
+                            if (!addedPackages.Contains(packageKey))
+                            {
+                                // Add as transitive (not direct) since it's a dependency of our dependency
+                                var transitivePackage = new ResolvedPackage
+                                {
+                                    Id = pkg.Id,
+                                    Version = pkg.Version,
+                                    IsDirect = false,  // Transitive dependency
+                                    LicenseExpression = pkg.LicenseExpression,
+                                    Description = pkg.Description,
+                                    ProjectUrl = pkg.ProjectUrl,
+                                    PackageHash = pkg.PackageHash
+                                };
+                                
+                                // Copy dependencies
+                                foreach (var dep in pkg.DependsOn)
+                                {
+                                    transitivePackage.DependsOn.Add(dep);
+                                }
+                                
+                                graph.Packages.Add(transitivePackage);
+                                addedPackages.Add(packageKey);
+                            }
+                        }
+
+                        // Add nested project references too
+                        foreach (ResolvedProjectReference projRef in projectGraph.ProjectReferences)
+                        {
+                            string nestedProjectKey = $"{projRef.Name}/{projRef.Version ?? "0.0.0"}";
+                            if (!addedProjects.Contains(nestedProjectKey))
+                            {
+                                graph.ProjectReferences.Add(new ResolvedProjectReference
+                                {
+                                    Name = projRef.Name,
+                                    Version = projRef.Version,
+                                    ResolvedPath = projRef.ResolvedPath,
+                                    DependsOn = projRef.DependsOn
+                                });
+                                addedProjects.Add(nestedProjectKey);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Provide helpful error message with available options
+                    string available = string.Join(", ", projectRegistry.Keys.Take(10));
+                    throw new InvalidOperationException(
+                        $"Custom component '{effectiveConfig.Component.Name}' depends on BomRef '{bomRef}', " +
+                        $"but it was not found in the registry. " +
+                        $"Available components: {available}");
+                }
+            }
+
+            // Compose SBOM
+            Composer.Composer composer = new(graph, effectiveConfig, basePath, projectRegistry, _tool);
             ComposerResult composerResult = await composer.ComposeAsync();
 
             result.WrittenFilePaths.Add(composerResult.OutputPath);
@@ -228,7 +430,12 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
     /// <inheritdoc />
     public override SbomBuilder WithComponent(Action<ComponentConfiguration> component)
     {
-        throw new NotImplementedException();
+        ComponentConfiguration config = new();
+        component(config);
+        
+        _component.CustomComponents.Add(config);
+        
+        return this;
     }
 
     // ──────────────────────── Auto-Detect Defaults ────────────────────────
