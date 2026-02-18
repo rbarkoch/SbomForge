@@ -58,7 +58,7 @@ public sealed class AdvancedScenariosTests
         var microsoftExtensions = bom.Components!
             .Where(c => c.Name?.StartsWith("Microsoft.Extensions") == true)
             .ToList();
-        Assert.AreEqual(0, microsoftExtensions.Count, 
+        Assert.IsEmpty(microsoftExtensions, 
             "Global prefix filter should be applied");
         
         // Should also exclude package matching project-specific filter
@@ -96,15 +96,15 @@ public sealed class AdvancedScenariosTests
         var lib2File = result.WrittenFilePaths[1];
         
         // ExampleClassLibrary1 should use project-specific output
-        Assert.IsTrue(lib1File.StartsWith(project1Output), 
+        Assert.StartsWith(project1Output, lib1File, 
             "Project1 should use custom output directory");
-        Assert.IsTrue(lib1File.Contains("custom-ExampleClassLibrary1"), 
+        Assert.Contains("custom-ExampleClassLibrary1", lib1File, 
             "Project1 should use custom file name template");
         
         // ExampleClassLibrary2 should use global output
-        Assert.IsTrue(lib2File.StartsWith(globalOutput), 
+        Assert.StartsWith(globalOutput, lib2File, 
             "Project2 should use global output directory");
-        Assert.IsTrue(lib2File.Contains("global-ExampleClassLibrary2"), 
+        Assert.Contains("global-ExampleClassLibrary2", lib2File, 
             "Project2 should use global file name template");
         
         // Cleanup
@@ -227,7 +227,9 @@ public sealed class AdvancedScenariosTests
             .BuildAsync();
 
         // Assert
+        #pragma warning disable MSTEST0037
         Assert.AreEqual(3, result.Boms.Count, "Should generate 3 SBOMs");
+        #pragma warning restore MSTEST0037
         
         var lib1Bom = result.Boms["ExampleClassLibrary1"];
         var app1Bom = result.Boms["ExampleConsoleApp1"];
@@ -290,13 +292,13 @@ public sealed class AdvancedScenariosTests
         var systemPackagesInLib2 = lib2Bom.Components!
             .Where(c => c.Name?.StartsWith("System.") == true)
             .ToList();
-        Assert.AreEqual(0, systemPackagesInLib2.Count, 
+        Assert.IsEmpty(systemPackagesInLib2, 
             "Global filter should apply to Lib2");
         
         var microsoftPackagesInLib2 = lib2Bom.Components!
             .Where(c => c.Name?.StartsWith("Microsoft.") == true)
             .ToList();
-        Assert.AreEqual(0, microsoftPackagesInLib2.Count, 
+        Assert.IsEmpty(microsoftPackagesInLib2, 
             "Project-specific filter should also apply to Lib2");
     }
 
@@ -472,7 +474,7 @@ public sealed class AdvancedScenariosTests
         var nugetPackages = lib1Bom.Components!
             .Where(c => c.Purl?.StartsWith("pkg:nuget/") == true)
             .ToList();
-        Assert.IsTrue(nugetPackages.Count > 0, "Should have NuGet packages with pkg:nuget PURLs");
+        Assert.IsNotEmpty(nugetPackages, "Should have NuGet packages with pkg:nuget PURLs");
         
         // Custom Docker component should have pkg:docker PURL
         var redis = app1Bom.Components!.FirstOrDefault(c => c.Name == "redis");
@@ -510,7 +512,7 @@ public sealed class AdvancedScenariosTests
             
             var toolComponents = bom.Metadata.Tools.Components;
             Assert.IsNotNull(toolComponents, "Tool components should exist");
-            Assert.IsTrue(toolComponents.Count > 0, "Should have at least one tool");
+            Assert.IsNotEmpty(toolComponents, "Should have at least one tool");
             
             var sbomForge = toolComponents.FirstOrDefault(t => t.Name == "SbomForge");
             Assert.IsNotNull(sbomForge, "SbomForge should be listed as a tool");

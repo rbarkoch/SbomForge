@@ -56,7 +56,9 @@ public sealed class CustomComponentTests
             .BuildAsync();
 
         // Assert
+        #pragma warning disable MSTEST0037
         Assert.AreEqual(1, result.Boms.Count, "Should generate one SBOM");
+        #pragma warning restore MSTEST0037
         Assert.IsTrue(result.Boms.ContainsKey("my-app"), "SBOM should be keyed by component name");
         
         var bom = result.Boms["my-app"];
@@ -130,7 +132,9 @@ public sealed class CustomComponentTests
             .BuildAsync();
 
         // Assert
+        #pragma warning disable MSTEST0037
         Assert.AreEqual(2, result.Boms.Count, "Should generate 2 SBOMs");
+        #pragma warning restore MSTEST0037
         
         var containerBom = result.Boms["docker-container"];
         var appBom = result.Boms["ExampleConsoleApp1"];
@@ -242,7 +246,9 @@ public sealed class CustomComponentTests
             .BuildAsync();
 
         // Assert
+        #pragma warning disable MSTEST0037
         Assert.AreEqual(2, result.Boms.Count, "Should generate 2 SBOMs");
+        #pragma warning restore MSTEST0037
         
         var k8sBom = result.Boms["k8s-deployment"];
         
@@ -330,7 +336,7 @@ public sealed class CustomComponentTests
             .Where(g => g.Count() > 1)
             .ToList();
         
-        Assert.AreEqual(0, packageGroups.Count,
+        Assert.IsEmpty(packageGroups,
             $"No NuGet packages should be duplicated. Found: {string.Join(", ", packageGroups.Select(g => g.Key))}");
     }
 
@@ -363,8 +369,10 @@ public sealed class CustomComponentTests
             .Where(c => c.Name == "ExampleClassLibrary1")
             .ToList();
         
+        #pragma warning disable MSTEST0037
         Assert.AreEqual(1, lib1Instances.Count,
             "ExampleClassLibrary1 should appear only once despite being referenced by multiple projects");
+        #pragma warning restore MSTEST0037
     }
 
     #endregion
@@ -453,11 +461,13 @@ public sealed class CustomComponentTests
             .BuildAsync();
 
         // Assert
+        #pragma warning disable MSTEST0037
         Assert.AreEqual(1, result.WrittenFilePaths.Count);
+        #pragma warning restore MSTEST0037
         var outputFile = result.WrittenFilePaths[0];
         
         Assert.IsTrue(File.Exists(outputFile), "SBOM file should exist");
-        Assert.IsTrue(outputFile.Contains("test-component"), 
+        Assert.Contains("test-component", outputFile, 
             "File name should contain component name");
     }
 
@@ -485,8 +495,10 @@ public sealed class CustomComponentTests
             .BuildAsync();
 
         // Assert
+        #pragma warning disable MSTEST0037
         Assert.AreEqual(2, result.WrittenFilePaths.Count);
         Assert.AreEqual(2, result.Boms.Count);
+        #pragma warning restore MSTEST0037
         
         foreach (var filePath in result.WrittenFilePaths)
         {

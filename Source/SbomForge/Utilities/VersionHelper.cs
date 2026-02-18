@@ -22,7 +22,7 @@ internal static class VersionHelper
             .InformationalVersion;
 
         if (!string.IsNullOrEmpty(informationalVersion))
-            return informationalVersion;
+            return informationalVersion!;
 
         return assembly.GetName().Version?.ToString() ?? "0.0.0";
     }

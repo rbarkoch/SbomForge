@@ -9,7 +9,7 @@ public class ProjectConfiguration
     /// <summary>
     /// The path to the project. It is either an absolute path, or a relative path from the Base Path.
     /// </summary>
-    public string ProjectPath { get; set; }
+    public string ProjectPath { get; set; } = null!;
 
     /// <summary>
     /// Configuration for how to generate the resulting SBOM. These override the global sbom configuration.

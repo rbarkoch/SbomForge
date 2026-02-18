@@ -5,7 +5,7 @@ namespace SbomForge.Resolver;
 /// </summary>
 internal record ResolvedProjectReference
 {
-    public string Name { get; set; }
+    public string Name { get; set; } = null!;
     public string? Version { get; set; }
     public string? ResolvedPath { get; set; }
     public List<string> DependsOn { get; set; } = [];

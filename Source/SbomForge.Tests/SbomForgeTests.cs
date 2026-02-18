@@ -59,15 +59,17 @@ public sealed class SbomForgeTests
             .BuildAsync();
 
         // Assert
+        #pragma warning disable MSTEST0037 // Use Assert.HasCount
         Assert.AreEqual(1, result.Boms.Count, "Should generate exactly one SBOM");
         Assert.AreEqual(1, result.WrittenFilePaths.Count, "Should write exactly one file");
+        #pragma warning restore MSTEST0037
         Assert.IsTrue(result.Boms.ContainsKey("ExampleClassLibrary1"), "SBOM should be keyed by project name");
 
         var bom = result.Boms["ExampleClassLibrary1"];
         Assert.IsNotNull(bom, "BOM should not be null");
         Assert.AreEqual(SpecificationVersion.v1_7, bom.SpecVersion, "Should use CycloneDX 1.7");
         Assert.IsNotNull(bom.SerialNumber, "Should have a serial number");
-        Assert.IsTrue(bom.SerialNumber!.StartsWith("urn:uuid:"), "Serial number should be a UUID URN");
+        Assert.StartsWith("urn:uuid:", bom.SerialNumber!, "Serial number should be a UUID URN");
         Assert.IsNotNull(bom.Metadata, "Metadata should not be null");
         Assert.IsNotNull(bom.Components, "Components list should not be null");
         Assert.IsNotNull(bom.Dependencies, "Dependencies list should not be null");
@@ -86,8 +88,10 @@ public sealed class SbomForgeTests
             .BuildAsync();
 
         // Assert
+        #pragma warning disable MSTEST0037
         Assert.AreEqual(3, result.Boms.Count, "Should generate three SBOMs");
         Assert.AreEqual(3, result.WrittenFilePaths.Count, "Should write three files");
+        #pragma warning restore MSTEST0037
         Assert.IsTrue(result.Boms.ContainsKey("ExampleClassLibrary1"), "Should have ExampleClassLibrary1 SBOM");
         Assert.IsTrue(result.Boms.ContainsKey("ExampleClassLibrary2"), "Should have ExampleClassLibrary2 SBOM");
         Assert.IsTrue(result.Boms.ContainsKey("ExampleConsoleApp1"), "Should have ExampleConsoleApp1 SBOM");
@@ -243,7 +247,7 @@ public sealed class SbomForgeTests
         
         Assert.IsNotNull(rootDependency, "Should have root dependency node");
         Assert.IsNotNull(rootDependency.Dependencies, "Root should have dependencies");
-        Assert.IsTrue(rootDependency.Dependencies.Count > 0, "Should have at least one direct dependency");
+        Assert.IsNotEmpty(rootDependency.Dependencies, "Should have at least one direct dependency");
         
         // Microsoft.Extensions.Hosting is a direct dependency
         var hostingComponent = bom.Components!
@@ -269,7 +273,7 @@ public sealed class SbomForgeTests
         var bom = result.Boms["ExampleClassLibrary1"];
         
         // Microsoft.Extensions.Hosting has transitive dependencies
-        Assert.IsTrue(bom.Components!.Count > 2, "Should have transitive dependencies beyond direct ones");
+        Assert.IsGreaterThan(2, bom.Components!.Count, "Should have transitive dependencies beyond direct ones");
         
         // Verify some common transitive dependencies
         var hasTransitive = bom.Components!.Any(c => 
@@ -323,7 +327,7 @@ public sealed class SbomForgeTests
             .Where(g => g.Count() > 1)
             .ToList();
         
-        Assert.AreEqual(0, duplicates.Count, 
+        Assert.IsEmpty(duplicates, 
             $"Should not have duplicate components. Found: {string.Join(", ", duplicates.Select(d => d.Key))}");
     }
 
@@ -344,8 +348,10 @@ public sealed class SbomForgeTests
         var bomRefs = bom.Components!.Select(c => c.BomRef).ToList();
         var distinctBomRefs = bomRefs.Distinct().ToList();
         
+        #pragma warning disable MSTEST0037
         Assert.AreEqual(bomRefs.Count, distinctBomRefs.Count, 
             "All components should have unique BomRefs");
+        #pragma warning restore MSTEST0037
     }
 
     [TestMethod]
@@ -366,14 +372,14 @@ public sealed class SbomForgeTests
         // Check all dependency references point to valid components
         foreach (var dep in bom.Dependencies!)
         {
-            Assert.IsTrue(validBomRefs.Contains(dep.Ref!), 
+            Assert.Contains(dep.Ref!, validBomRefs, 
                 $"Dependency ref '{dep.Ref}' should point to a valid component");
             
             if (dep.Dependencies != null)
             {
                 foreach (var subDep in dep.Dependencies)
                 {
-                    Assert.IsTrue(validBomRefs.Contains(subDep.Ref!), 
+                    Assert.Contains(subDep.Ref!, validBomRefs, 
                         $"Sub-dependency ref '{subDep.Ref}' should point to a valid component");
                 }
             }
@@ -420,7 +426,7 @@ public sealed class SbomForgeTests
             .Where(c => c.Name?.StartsWith("Microsoft.Extensions") == true)
             .ToList();
         
-        Assert.AreEqual(0, microsoftExtensionsPackages.Count, 
+        Assert.IsEmpty(microsoftExtensionsPackages, 
             "Should not have any Microsoft.Extensions.* packages");
     }
 
@@ -547,9 +553,11 @@ public sealed class SbomForgeTests
             .BuildAsync();
 
         // Assert
+        #pragma warning disable MSTEST0037
         Assert.AreEqual(1, result.WrittenFilePaths.Count);
+        #pragma warning restore MSTEST0037
         var outputFile = result.WrittenFilePaths[0];
-        Assert.IsTrue(outputFile.StartsWith(customPath), 
+        Assert.StartsWith(customPath, outputFile, 
             $"Output file should be in custom directory. Expected path starting with: {customPath}, Got: {outputFile}");
         Assert.IsTrue(File.Exists(outputFile), "Output file should exist");
         
@@ -575,7 +583,9 @@ public sealed class SbomForgeTests
             .BuildAsync();
 
         // Assert
+        #pragma warning disable MSTEST0037
         Assert.AreEqual(1, result.WrittenFilePaths.Count);
+        #pragma warning restore MSTEST0037
         var fileName = Path.GetFileName(result.WrittenFilePaths[0]);
         Assert.AreEqual("ExampleClassLibrary1-custom-sbom.json", fileName, 
             "Should use custom file name template");
@@ -619,7 +629,7 @@ public sealed class SbomForgeTests
         // Assert
         var bom = result.Boms["ExampleClassLibrary1"];
         
-        Assert.IsTrue(bom.Components!.Count > 0, "Should have components");
+        Assert.IsNotEmpty(bom.Components!, "Should have components");
         
         foreach (var component in bom.Components!)
         {
@@ -644,7 +654,7 @@ public sealed class SbomForgeTests
         // Assert
         var bom = result.Boms["ExampleClassLibrary1"];
         
-        Assert.IsTrue(bom.Dependencies!.Count > 0, "Should have dependencies");
+        Assert.IsNotEmpty(bom.Dependencies!, "Should have dependencies");
         
         // Should have a root dependency matching the metadata component
         var rootDep = bom.Dependencies!
@@ -657,7 +667,7 @@ public sealed class SbomForgeTests
         
         foreach (var dep in bom.Dependencies!)
         {
-            Assert.IsTrue(allValidRefs.Contains(dep.Ref!), 
+            Assert.Contains(dep.Ref!, allValidRefs, 
                 $"Dependency ref {dep.Ref} should be valid");
         }
     }
@@ -727,7 +737,9 @@ public sealed class SbomForgeTests
             .BuildAsync();
 
         // Assert - just verify all build successfully without errors
+        #pragma warning disable MSTEST0037
         Assert.AreEqual(4, result.Boms.Count, "All projects should build successfully");
+        #pragma warning restore MSTEST0037
     }
 
     #endregion
@@ -753,8 +765,10 @@ public sealed class SbomForgeTests
             .BuildAsync();
 
         // Assert - Multiple comprehensive checks
+        #pragma warning disable MSTEST0037
         Assert.AreEqual(4, result.Boms.Count, "Should generate 4 SBOMs");
         Assert.AreEqual(4, result.WrittenFilePaths.Count, "Should write 4 files");
+        #pragma warning restore MSTEST0037
         
         // Check cross-SBOM consistency for shared dependencies
         var lib1Bom = result.Boms["ExampleClassLibrary1"];

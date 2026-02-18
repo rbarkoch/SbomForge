@@ -7,6 +7,6 @@ namespace SbomForge.Composer;
 /// </summary>
 internal class ComposerResult
 {
-    public Bom Bom { get; set; }
-    public string OutputPath { get; set; }
+    public Bom Bom { get; set; } = null!;
+    public string OutputPath { get; set; } = null!;
 }

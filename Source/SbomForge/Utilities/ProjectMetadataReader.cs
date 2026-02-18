@@ -89,7 +89,7 @@ internal static class ProjectMetadataReader
 
                 if (!string.IsNullOrWhiteSpace(value))
                 {
-                    properties[name] = value.Trim();
+                    properties[name] = value!.Trim();
                 }
             }
         }

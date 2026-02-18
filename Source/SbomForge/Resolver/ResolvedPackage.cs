@@ -5,8 +5,8 @@ namespace SbomForge.Resolver;
 /// </summary>
 internal class ResolvedPackage
 {
-    public string Id { get; set; }
-    public string Version { get; set; }
+    public string Id { get; set; } = null!;
+    public string Version { get; set; } = null!;
     public string? PackageHash { get; set; }
     public string? LicenseExpression { get; set; }
     public string? ProjectUrl { get; set; }

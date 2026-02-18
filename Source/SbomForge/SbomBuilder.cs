@@ -197,8 +197,8 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
             // Register by Name (secondary key for convenience)
             if (!string.IsNullOrEmpty(effectiveConfig.Component.Name))
             {
-                if (!projectRegistry.ContainsKey(effectiveConfig.Component.Name))
-                    projectRegistry.Add(effectiveConfig.Component.Name, effectiveConfig.Component);
+                if (!projectRegistry.ContainsKey(effectiveConfig.Component.Name!))
+                    projectRegistry.Add(effectiveConfig.Component.Name!, effectiveConfig.Component);
             }
         }
 

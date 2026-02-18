@@ -210,7 +210,7 @@ internal class DependencyResolver
                          ?? doc.Descendants("BaseIntermediateOutputPath").FirstOrDefault()?.Value
                          ?? doc.Descendants("IntermediateOutputPath").FirstOrDefault()?.Value;
 
-            return string.IsNullOrWhiteSpace(value) ? null : value.TrimEnd('/', '\\');
+            return string.IsNullOrWhiteSpace(value) ? null : value!.TrimEnd('/', '\\');
         }
         catch
         {
@@ -249,7 +249,7 @@ internal class DependencyResolver
             return targets.FirstOrDefault(t => string.IsNullOrEmpty(t.RuntimeIdentifier))
                    ?? targets[0];
 
-        string requested = _resolution.TargetFramework;
+        string requested = _resolution.TargetFramework!;
 
         // Try an exact match on the full framework name first, then fall back to
         // the short folder name (e.g. "net8.0", "net462", "netstandard2.0").
@@ -270,7 +270,7 @@ internal class DependencyResolver
                 $"Target framework '{requested}' not found in lock file. Available: {available}");
         }
 
-        return match;
+        return match!;
     }
 
     // ─────────────────────────── Direct Dependency Detection ───────────────────────────
@@ -549,6 +549,6 @@ internal class DependencyResolver
     {
         string? value = parent.Element(ns + localName)?.Value
                      ?? parent.Element(localName)?.Value;
-        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        return string.IsNullOrWhiteSpace(value) ? null : value!.Trim();
     }
 }

@@ -6,7 +6,7 @@ namespace SbomForge.Resolver;
 /// </summary>
 internal class DependencyGraph
 {
-    public string ProjectName { get; set; }
+    public string ProjectName { get; set; } = null!;
     public List<ResolvedPackage> Packages { get; set; } = [];
     public List<ResolvedProjectReference> ProjectReferences { get; set; } = [];
     public string SourceProjectPath { get; set; } = "";
