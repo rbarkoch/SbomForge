@@ -108,48 +108,9 @@ internal static class Extensions
         }
 
         // Merge component metadata from all configurations
-        foreach(SbomConfiguration config in allConfigs)
+        foreach (SbomConfiguration config in allConfigs)
         {
-            if (!string.IsNullOrEmpty(config.Component.Name))
-            {
-                merged.Component.Name = config.Component.Name;
-            }
-            if (!string.IsNullOrEmpty(config.Component.Version))
-            {
-                merged.Component.Version = config.Component.Version;
-            }
-            if (!string.IsNullOrEmpty(config.Component.Description))
-            {
-                merged.Component.Description = config.Component.Description;
-            }
-            if (config.Component.Type != Component.Classification.Null)
-            {
-                merged.Component.Type = config.Component.Type;
-            }
-            if (!string.IsNullOrEmpty(config.Component.Group))
-            {
-                merged.Component.Group = config.Component.Group;
-            }
-            if (!string.IsNullOrEmpty(config.Component.Publisher))
-            {
-                merged.Component.Publisher = config.Component.Publisher;
-            }
-            if (!string.IsNullOrEmpty(config.Component.Copyright))
-            {
-                merged.Component.Copyright = config.Component.Copyright;
-            }
-            if (!string.IsNullOrEmpty(config.Component.Purl))
-            {
-                merged.Component.Purl = config.Component.Purl;
-            }
-            if (config.Component.Supplier is not null)
-            {
-                merged.Component.Supplier = config.Component.Supplier;
-            }
-            if (config.Component.Licenses is not null && config.Component.Licenses.Count > 0)
-            {
-                merged.Component.Licenses = config.Component.Licenses;
-            }
+            merged.Component.MergeFrom(config.Component);
         }
 
         // Merge custom components from all configurations (combine all lists)
@@ -208,48 +169,9 @@ internal static class Extensions
 
         // Merge component metadata
         List<ExternalComponentConfiguration> allConfigs = [external, .. other];
-        foreach(ExternalComponentConfiguration config in allConfigs)
+        foreach (ExternalComponentConfiguration config in allConfigs)
         {
-            if (!string.IsNullOrEmpty(config.Component.Name))
-            {
-                merged.Component.Name = config.Component.Name;
-            }
-            if (!string.IsNullOrEmpty(config.Component.Version))
-            {
-                merged.Component.Version = config.Component.Version;
-            }
-            if (!string.IsNullOrEmpty(config.Component.Description))
-            {
-                merged.Component.Description = config.Component.Description;
-            }
-            if (config.Component.Type != Component.Classification.Null)
-            {
-                merged.Component.Type = config.Component.Type;
-            }
-            if (!string.IsNullOrEmpty(config.Component.Group))
-            {
-                merged.Component.Group = config.Component.Group;
-            }
-            if (!string.IsNullOrEmpty(config.Component.Publisher))
-            {
-                merged.Component.Publisher = config.Component.Publisher;
-            }
-            if (!string.IsNullOrEmpty(config.Component.Copyright))
-            {
-                merged.Component.Copyright = config.Component.Copyright;
-            }
-            if (!string.IsNullOrEmpty(config.Component.Purl))
-            {
-                merged.Component.Purl = config.Component.Purl;
-            }
-            if (config.Component.Supplier is not null)
-            {
-                merged.Component.Supplier = config.Component.Supplier;
-            }
-            if (config.Component.Licenses is not null && config.Component.Licenses.Count > 0)
-            {
-                merged.Component.Licenses = config.Component.Licenses;
-            }
+            merged.Component.MergeFrom(config.Component);
         }
 
         return merged;

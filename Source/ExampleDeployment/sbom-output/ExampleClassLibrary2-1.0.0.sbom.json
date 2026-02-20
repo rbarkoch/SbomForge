@@ -1,0 +1,87 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "serialNumber": "urn:uuid:a2729149-829b-419f-b87e-046bac59f1a7",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-02-20T22:19:28Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "group": "SbomForge",
+          "name": "SbomForge",
+          "version": "1.0.0\u002B157258a70889c9abfa3a51c148877685b84055b8",
+          "externalReferences": [
+            {
+              "url": "https://github.com/rbarkoch/SbomForge",
+              "type": "website"
+            }
+          ]
+        }
+      ]
+    },
+    "component": {
+      "type": "library",
+      "bom-ref": "pkg:nuget/ExampleClassLibrary2@1.0.0",
+      "supplier": {
+        "name": "Example Corp"
+      },
+      "publisher": "Ronnie Bar-Kochba",
+      "name": "ExampleClassLibrary2",
+      "version": "1.0.0",
+      "description": "Example class library for SBOM testing",
+      "copyright": "Copyright (c) 2026 Example Corp",
+      "cpe": "cpe:2.3:a:example:exampleclasslibrary2:1.0.0:*:*:*:*:*:*:*",
+      "purl": "pkg:nuget/ExampleClassLibrary2@1.0.0",
+      "modified": false,
+      "isExternal": false
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:nuget/Newtonsoft.Json@13.0.4",
+      "authors": [
+        {
+          "name": "James Newton-King"
+        }
+      ],
+      "name": "Newtonsoft.Json",
+      "version": "13.0.4",
+      "description": "Json.NET is a popular high-performance JSON framework for .NET",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "copyright": "Copyright \u00A9 James Newton-King 2008",
+      "purl": "pkg:nuget/Newtonsoft.Json@13.0.4",
+      "externalReferences": [
+        {
+          "url": "https://www.newtonsoft.com/json",
+          "type": "website"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:nuget/ExampleClassLibrary2@1.0.0",
+      "dependsOn": [
+        "pkg:nuget/Newtonsoft.Json@13.0.4"
+      ]
+    },
+    {
+      "ref": "pkg:nuget/Newtonsoft.Json@13.0.4",
+      "dependsOn": []
+    }
+  ]
+}

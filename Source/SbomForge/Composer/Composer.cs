@@ -135,10 +135,9 @@ internal class Composer
             SerialNumber = $"urn:uuid:{Guid.NewGuid()}",
             Metadata = BuildMetadata(subject),
             Components = [],
-            Dependencies = []
+            Dependencies = [],
+            SpecVersion = SpecificationVersion.v1_7
         };
-
-        bom.SpecVersion = SpecificationVersion.v1_7;
 
         // Root dependency node.
         Dependency rootDep = new()
@@ -248,12 +247,12 @@ internal class Composer
 
     // ───────────────────────────────── Metadata ─────────────────────────────────
 
-    private Metadata BuildMetadata(ComponentConfiguration subject)
+    private CycloneDX.Models.Metadata BuildMetadata(ComponentConfiguration subject)
     {
         if (subject.Type == Component.Classification.Null)
             subject.Type = Component.Classification.Application;
 
-        return new Metadata
+        return new CycloneDX.Models.Metadata
         {
             Timestamp = DateTime.UtcNow,
             Tools = BuildToolChoices(),
@@ -311,17 +310,10 @@ internal class Composer
             Name = pkg.Id,
             Version = pkg.Version,
             Purl = purl,
-            Description = pkg.Description,
             Scope = pkg.IsDirect
                 ? Component.ComponentScope.Required
                 : Component.ComponentScope.Optional
         };
-
-        // License.
-        if (!string.IsNullOrEmpty(pkg.LicenseExpression))
-        {
-            component.Licenses = [new LicenseChoice { Expression = pkg.LicenseExpression }];
-        }
 
         // Hashes.
         if (!string.IsNullOrEmpty(pkg.PackageHash))
@@ -336,17 +328,42 @@ internal class Composer
             ];
         }
 
-        // External references.
-        if (!string.IsNullOrEmpty(pkg.ProjectUrl))
+        // Nuspec.
+        if(pkg.Nuspec is not null)
         {
-            component.ExternalReferences =
-            [
-                new ExternalReference
-                {
-                    Type = ExternalReference.ExternalReferenceType.Website,
-                    Url = pkg.ProjectUrl
-                }
-            ];
+            if(!string.IsNullOrWhiteSpace(pkg.Nuspec.Metadata.Description))
+            {
+                component.Description = pkg.Nuspec.Metadata.Description;
+            }
+
+            if(!string.IsNullOrWhiteSpace(pkg.Nuspec.Metadata.Copyright))
+            {
+                component.Copyright = pkg.Nuspec.Metadata.Copyright;
+            }
+
+            if(!string.IsNullOrWhiteSpace(pkg.Nuspec.Metadata.Authors))
+            {
+                component.Authors = [.. pkg.Nuspec.Metadata.Authors.Split(',').Where(a => !string.IsNullOrWhiteSpace(a)).Select(a => new OrganizationalContact(){ Name = a.Trim()})];
+            }
+
+            if(!string.IsNullOrWhiteSpace(pkg.Nuspec.Metadata.License.Type))
+            {
+                component.Licenses = [new LicenseChoice() {
+                    Expression = pkg.Nuspec.Metadata.License.Text
+                }];
+            }
+
+            if (!string.IsNullOrWhiteSpace(pkg.Nuspec.Metadata.ProjectUrl))
+            {
+                component.ExternalReferences =
+                [
+                    new ExternalReference
+                    {
+                        Type = ExternalReference.ExternalReferenceType.Website,
+                        Url = pkg.Nuspec.Metadata.ProjectUrl
+                    }
+                ];
+            }
         }
 
         return component;

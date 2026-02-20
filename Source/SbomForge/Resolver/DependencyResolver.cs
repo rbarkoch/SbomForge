@@ -414,7 +414,7 @@ internal class DependencyResolver
         HashSet<string> directDependencyIds,
         HashSet<string> projectReferenceNames)
     {
-        NuspecMetadata metadata = TryReadNuspecMetadata(library, packagesPath);
+        Nuspec? nuspec = TryReadNuspecMetadata(library, packagesPath);
         List<string> dependsOn = BuildDependsOnList(targetLib, projectReferenceNames);
         string name = targetLib.Name ?? "";
 
@@ -423,9 +423,7 @@ internal class DependencyResolver
             Id = name,
             Version = targetLib.Version?.ToNormalizedString() ?? "0.0.0",
             PackageHash = library?.Sha512,
-            LicenseExpression = metadata.LicenseExpression,
-            ProjectUrl = metadata.ProjectUrl,
-            Description = metadata.Description,
+            Nuspec = nuspec,
             IsDirect = directDependencyIds.Contains(name)
         };
 
@@ -480,15 +478,15 @@ internal class DependencyResolver
 
     /// <summary>
     /// Attempts to read metadata from the package's .nuspec file in the global
-    /// NuGet packages directory. Returns an empty <see cref="NuspecMetadata"/>
+    /// NuGet packages directory. Returns an empty <see cref="Nuspec"/>
     /// if the file cannot be found or parsed.
     /// </summary>
-    private static NuspecMetadata TryReadNuspecMetadata(
+    private static Nuspec? TryReadNuspecMetadata(
         LockFileLibrary? library,
         string? packagesPath)
     {
         if (library is null || string.IsNullOrEmpty(packagesPath) || string.IsNullOrEmpty(library.Path))
-            return new NuspecMetadata();
+            return null;
 
         // The .nuspec file lives at:
         // {packagesPath}/{library.Path}/{packageId.ToLowerInvariant()}.nuspec
@@ -498,7 +496,7 @@ internal class DependencyResolver
             $"{library.Name.ToLowerInvariant()}.nuspec");
 
         if (!File.Exists(nuspecPath))
-            return new NuspecMetadata();
+            return null;
 
         return ParseNuspec(nuspecPath);
     }
@@ -507,37 +505,17 @@ internal class DependencyResolver
     /// Parses a .nuspec XML file and extracts license, project URL, and description metadata.
     /// Handles both namespaced and non-namespaced nuspec formats.
     /// </summary>
-    private static NuspecMetadata ParseNuspec(string nuspecPath)
+    private static Nuspec? ParseNuspec(string nuspecPath)
     {
         try
         {
-            XDocument doc = XDocument.Load(nuspecPath);
-            XElement? root = doc.Root;
-            if (root is null)
-                return new NuspecMetadata();
-
-            XNamespace ns = root.GetDefaultNamespace();
-            XElement? metadata = root.Element(ns + "metadata") ?? root.Element("metadata");
-            if (metadata is null)
-                return new NuspecMetadata();
-
-            // License can be in <license type="expression"> or <licenseUrl>.
-            string? license = GetElementValue(metadata, ns, "license")
-                           ?? GetElementValue(metadata, ns, "licenseUrl");
-
-            string? projectUrl = GetElementValue(metadata, ns, "projectUrl");
-            string? description = GetElementValue(metadata, ns, "description");
-
-            return new NuspecMetadata
-            {
-                LicenseExpression = license,
-                ProjectUrl = projectUrl,
-                Description = description
-            };
+            using Stream stream = File.OpenRead(nuspecPath);
+            Nuspec? metadata = Nuspec.FromFile(stream);
+            return metadata;
         }
         catch
         {
-            return new NuspecMetadata();
+            return null;
         }
     }
 
