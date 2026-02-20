@@ -8,8 +8,10 @@ using SbomForge.Utilities;
 namespace SbomForge.Composer;
 
 /// <summary>
-/// Composes a CycloneDX 1.7 SBOM from a resolved <see cref="DependencyGraph"/>
+/// Composes a CycloneDX SBOM from a resolved <see cref="DependencyGraph"/>
 /// and an effective <see cref="SbomConfiguration"/>.
+/// The CycloneDX specification version defaults to 1.7 and can be overridden
+/// via <see cref="SbomForge.Configuration.OutputConfiguration.SpecVersion"/>.
 /// Uses a project registry for cross-SBOM consistency of project references.
 /// </summary>
 internal class Composer
@@ -129,6 +131,14 @@ internal class Composer
                 ?? $"pkg:generic/{subject.Name ?? graph.ProjectName}@{subject.Version ?? "0.0.0"}";
         }
 
+        SpecificationVersion resolvedSpecVersion = config.Output.SpecVersion ?? SpecificationVersion.v1_7;
+        if (resolvedSpecVersion < SpecificationVersion.v1_4)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(config),
+                $"CycloneDX spec version '{resolvedSpecVersion}' is not supported. SbomForge supports v1.4 through v1.7.");
+        }
+
         Bom bom = new()
         {
             Version = 1,
@@ -136,7 +146,7 @@ internal class Composer
             Metadata = BuildMetadata(subject),
             Components = [],
             Dependencies = [],
-            SpecVersion = SpecificationVersion.v1_7
+            SpecVersion = resolvedSpecVersion
         };
 
         // Root dependency node.

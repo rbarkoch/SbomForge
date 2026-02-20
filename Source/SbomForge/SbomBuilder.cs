@@ -7,8 +7,10 @@ using SbomForge.Utilities;
 namespace SbomForge;
 
 /// <summary>
-/// Main entry point for generating CycloneDX 1.7 SBOMs from .NET projects.
+/// Main entry point for generating CycloneDX SBOMs from .NET projects.
 /// Provides a fluent API for configuring and building Software Bill of Materials documents.
+/// The CycloneDX specification version defaults to 1.7 and can be overridden per-project
+/// via <see cref="SbomForge.Configuration.OutputConfiguration.SpecVersion"/>.
 /// </summary>
 public class SbomBuilder : BuilderBase<SbomBuilder>
 {

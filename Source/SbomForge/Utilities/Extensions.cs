@@ -54,7 +54,8 @@ internal static class Extensions
         OutputConfiguration merged = new()
         {
             OutputDirectory = output.OutputDirectory,
-            FileNameTemplate = output.FileNameTemplate
+            FileNameTemplate = output.FileNameTemplate,
+            SpecVersion = output.SpecVersion
         };
 
         foreach(OutputConfiguration config in other)
@@ -66,6 +67,10 @@ internal static class Extensions
             if (config.FileNameTemplate is not null)
             {
                 merged.FileNameTemplate = config.FileNameTemplate;
+            }
+            if (config.SpecVersion is not null)
+            {
+                merged.SpecVersion = config.SpecVersion;
             }
         }
 
@@ -105,6 +110,7 @@ internal static class Extensions
             var mergedOutput = allOutputs.First().Merge(allOutputs.Skip(1).ToArray());
             merged.Output.OutputDirectory = mergedOutput.OutputDirectory;
             merged.Output.FileNameTemplate = mergedOutput.FileNameTemplate;
+            merged.Output.SpecVersion = mergedOutput.SpecVersion;
         }
 
         // Merge component metadata from all configurations

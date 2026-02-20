@@ -177,6 +177,9 @@ await new SbomBuilder()
         
         // Custom file naming with tokens: {ProjectName}, {ExecutableName}, {Version}
         output.FileNameTemplate = "{ProjectName}-{Version}-sbom.json";
+        
+        // CycloneDX spec version (default: v1.7; supported: v1.4 – v1.7)
+        output.SpecVersion = SpecificationVersion.v1_5;
     })
     
     .ForProject("MyApp.csproj")

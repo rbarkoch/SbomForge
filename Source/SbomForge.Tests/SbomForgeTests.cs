@@ -796,4 +796,98 @@ public sealed class SbomForgeTests
     }
 
     #endregion
+
+    #region Spec Version Tests
+
+    [TestMethod]
+    public async Task SpecVersion_Default_IsV1_7()
+    {
+        // Arrange & Act
+        var result = await new SbomBuilder()
+            .WithBasePath(_testBasePath)
+            .WithOutput(o => o.OutputDirectory = _outputDirectory)
+            .ForProject("ExampleClassLibrary1/ExampleClassLibrary1.csproj")
+            .BuildAsync();
+
+        // Assert
+        var bom = result.Boms["ExampleClassLibrary1"];
+        Assert.AreEqual(SpecificationVersion.v1_7, bom.SpecVersion,
+            "Default spec version should be CycloneDX 1.7");
+
+        var json = File.ReadAllText(result.WrittenFilePaths[0]);
+        Assert.IsTrue(json.Contains("\"specVersion\": \"1.7\""),
+            "Written JSON should contain specVersion 1.7");
+    }
+
+    [DataTestMethod]
+    [DataRow(SpecificationVersion.v1_4, "1.4")]
+    [DataRow(SpecificationVersion.v1_5, "1.5")]
+    [DataRow(SpecificationVersion.v1_6, "1.6")]
+    [DataRow(SpecificationVersion.v1_7, "1.7")]
+    public async Task SpecVersion_ExplicitVersion_ProducesCorrectOutput(
+        SpecificationVersion version, string expectedString)
+    {
+        // Arrange & Act
+        var result = await new SbomBuilder()
+            .WithBasePath(_testBasePath)
+            .WithOutput(o =>
+            {
+                o.OutputDirectory = _outputDirectory;
+                o.SpecVersion = version;
+            })
+            .ForProject("ExampleClassLibrary1/ExampleClassLibrary1.csproj")
+            .BuildAsync();
+
+        // Assert
+        var bom = result.Boms["ExampleClassLibrary1"];
+        Assert.AreEqual(version, bom.SpecVersion,
+            $"Expected spec version {expectedString}");
+
+        var json = File.ReadAllText(result.WrittenFilePaths[0]);
+        Assert.IsTrue(json.Contains($"\"specVersion\": \"{expectedString}\""),
+            $"Written JSON should contain specVersion {expectedString}");
+    }
+
+    [TestMethod]
+    public async Task SpecVersion_PerProjectOverride_OnlyOverridesTargetProject()
+    {
+        // Arrange & Act — global v1.5, ExampleClassLibrary2 overrides to v1.6
+        var result = await new SbomBuilder()
+            .WithBasePath(_testBasePath)
+            .WithOutput(o =>
+            {
+                o.OutputDirectory = _outputDirectory;
+                o.SpecVersion = SpecificationVersion.v1_5;
+            })
+            .ForProject("ExampleClassLibrary1/ExampleClassLibrary1.csproj")
+            .ForProject("ExampleClassLibrary2/ExampleClassLibrary2.csproj", p =>
+                p.WithOutput(o => o.SpecVersion = SpecificationVersion.v1_6))
+            .BuildAsync();
+
+        // Assert
+        Assert.AreEqual(SpecificationVersion.v1_5, result.Boms["ExampleClassLibrary1"].SpecVersion,
+            "ExampleClassLibrary1 should use global spec version 1.5");
+        Assert.AreEqual(SpecificationVersion.v1_6, result.Boms["ExampleClassLibrary2"].SpecVersion,
+            "ExampleClassLibrary2 should use its per-project override 1.6");
+    }
+
+    [TestMethod]
+    public async Task SpecVersion_UnsupportedVersion_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange & Act
+        await Assert.ThrowsExceptionAsync<ArgumentOutOfRangeException>(async () =>
+        {
+            await new SbomBuilder()
+                .WithBasePath(_testBasePath)
+                .WithOutput(o =>
+                {
+                    o.OutputDirectory = _outputDirectory;
+                    o.SpecVersion = SpecificationVersion.v1_3;
+                })
+                .ForProject("ExampleClassLibrary1/ExampleClassLibrary1.csproj")
+                .BuildAsync();
+        }, "Spec versions below v1.4 should throw ArgumentOutOfRangeException");
+    }
+
+    #endregion
 }

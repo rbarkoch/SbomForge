@@ -117,6 +117,7 @@ Defines exclusion rules:
 Controls SBOM file output:
 - `OutputDirectory` (string) - Target directory (default: `./sbom-output`)
 - `FileNameTemplate` (string) - File naming pattern with tokens: `{ProjectName}`, `{ExecutableName}`, `{Version}`
+- `SpecVersion` (SpecificationVersion?) - CycloneDX spec version to emit (default: `v1_7`; supported: `v1_4` – `v1_7`)
 
 #### `ProjectConfiguration`
 Internal configuration linking a project path to its SBOM configuration:
