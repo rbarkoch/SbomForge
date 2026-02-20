@@ -135,10 +135,9 @@ internal class Composer
             SerialNumber = $"urn:uuid:{Guid.NewGuid()}",
             Metadata = BuildMetadata(subject),
             Components = [],
-            Dependencies = []
+            Dependencies = [],
+            SpecVersion = SpecificationVersion.v1_7
         };
-
-        bom.SpecVersion = SpecificationVersion.v1_7;
 
         // Root dependency node.
         Dependency rootDep = new()
@@ -248,31 +247,17 @@ internal class Composer
 
     // ───────────────────────────────── Metadata ─────────────────────────────────
 
-    private Metadata BuildMetadata(ComponentConfiguration subject)
+    private CycloneDX.Models.Metadata BuildMetadata(ComponentConfiguration subject)
     {
-        Metadata metadata = new()
+        if (subject.Type == Component.Classification.Null)
+            subject.Type = Component.Classification.Application;
+
+        return new CycloneDX.Models.Metadata
         {
             Timestamp = DateTime.UtcNow,
             Tools = BuildToolChoices(),
-            Component = new Component
-            {
-                Type = subject.Type != Component.Classification.Null
-                    ? subject.Type
-                    : Component.Classification.Application,
-                BomRef = subject.BomRef,
-                Name = subject.Name,
-                Version = subject.Version,
-                Description = subject.Description,
-                Purl = subject.Purl,
-                Publisher = subject.Publisher,
-                Copyright = subject.Copyright,
-                Supplier = subject.Supplier,
-                Group = subject.Group,
-                Licenses = subject.Licenses
-            }
+            Component = subject
         };
-
-        return metadata;
     }
 
     /// <summary>
@@ -325,17 +310,10 @@ internal class Composer
             Name = pkg.Id,
             Version = pkg.Version,
             Purl = purl,
-            Description = pkg.Description,
             Scope = pkg.IsDirect
                 ? Component.ComponentScope.Required
                 : Component.ComponentScope.Optional
         };
-
-        // License.
-        if (!string.IsNullOrEmpty(pkg.LicenseExpression))
-        {
-            component.Licenses = [new LicenseChoice { Expression = pkg.LicenseExpression }];
-        }
 
         // Hashes.
         if (!string.IsNullOrEmpty(pkg.PackageHash))
@@ -350,17 +328,42 @@ internal class Composer
             ];
         }
 
-        // External references.
-        if (!string.IsNullOrEmpty(pkg.ProjectUrl))
+        // Nuspec.
+        if(pkg.Nuspec is not null)
         {
-            component.ExternalReferences =
-            [
-                new ExternalReference
-                {
-                    Type = ExternalReference.ExternalReferenceType.Website,
-                    Url = pkg.ProjectUrl
-                }
-            ];
+            if(!string.IsNullOrWhiteSpace(pkg.Nuspec.Metadata.Description))
+            {
+                component.Description = pkg.Nuspec.Metadata.Description;
+            }
+
+            if(!string.IsNullOrWhiteSpace(pkg.Nuspec.Metadata.Copyright))
+            {
+                component.Copyright = pkg.Nuspec.Metadata.Copyright;
+            }
+
+            if(!string.IsNullOrWhiteSpace(pkg.Nuspec.Metadata.Authors))
+            {
+                component.Authors = [.. pkg.Nuspec.Metadata.Authors.Split(',').Where(a => !string.IsNullOrWhiteSpace(a)).Select(a => new OrganizationalContact(){ Name = a.Trim()})];
+            }
+
+            if(!string.IsNullOrWhiteSpace(pkg.Nuspec.Metadata.License.Type))
+            {
+                component.Licenses = [new LicenseChoice() {
+                    Expression = pkg.Nuspec.Metadata.License.Text
+                }];
+            }
+
+            if (!string.IsNullOrWhiteSpace(pkg.Nuspec.Metadata.ProjectUrl))
+            {
+                component.ExternalReferences =
+                [
+                    new ExternalReference
+                    {
+                        Type = ExternalReference.ExternalReferenceType.Website,
+                        Url = pkg.Nuspec.Metadata.ProjectUrl
+                    }
+                ];
+            }
         }
 
         return component;
@@ -391,27 +394,18 @@ internal class Composer
 
         if (registryEntry is not null)
         {
-            // Use registry values for consistency.
+            if (registryEntry.Type == Component.Classification.Null)
+                registryEntry.Type = Component.Classification.Library;
+
             string purl = registryEntry.Purl
                 ?? $"pkg:generic/{registryEntry.Name ?? projRef.Name}@{registryEntry.Version ?? projRef.Version ?? "0.0.0"}";
 
-            return new Component
-            {
-                Type = registryEntry.Type != Component.Classification.Null
-                    ? registryEntry.Type
-                    : Component.Classification.Library,
-                BomRef = registryEntry.BomRef ?? purl,
-                Name = registryEntry.Name ?? projRef.Name,
-                Version = registryEntry.Version ?? projRef.Version,
-                Description = registryEntry.Description,
-                Purl = purl,
-                Publisher = registryEntry.Publisher,
-                Copyright = registryEntry.Copyright,
-                Supplier = registryEntry.Supplier,
-                Group = registryEntry.Group,
-                Licenses = registryEntry.Licenses,
-                Scope = Component.ComponentScope.Required
-            };
+            registryEntry.Purl = purl;
+            registryEntry.BomRef ??= purl;
+            registryEntry.Name ??= projRef.Name;
+            registryEntry.Version ??= projRef.Version;
+
+            return registryEntry;
         }
 
         // Fallback: auto-detect from resolved path if available.
@@ -456,35 +450,17 @@ internal class Composer
     /// </summary>
     private static Component BuildCustomComponent(ComponentConfiguration config)
     {
-        // Ensure BomRef is set
+        if (config.Type == Component.Classification.Null)
+            config.Type = Component.Classification.Library;
+
         string bomRef = config.BomRef
             ?? config.Purl
             ?? $"pkg:generic/{config.Name ?? "unknown"}@{config.Version ?? "0.0.0"}";
 
-        // Ensure Purl is set
-        string purl = config.Purl ?? bomRef;
+        config.BomRef = bomRef;
+        config.Purl ??= bomRef;
 
-        return new Component
-        {
-            Type = config.Type != Component.Classification.Null
-                ? config.Type
-                : Component.Classification.Library,
-            BomRef = bomRef,
-            Name = config.Name,
-            Version = config.Version,
-            Description = config.Description,
-            Purl = purl,
-            Publisher = config.Publisher,
-            Copyright = config.Copyright,
-            Supplier = config.Supplier,
-            Group = config.Group,
-            Licenses = config.Licenses,
-            ExternalReferences = config.ExternalReferences,
-            Hashes = config.Hashes,
-            Properties = config.Properties,
-            Evidence = config.Evidence,
-            Scope = config.Scope
-        };
+        return config;
     }
 
     // ──────────────────────── Serialize & Write ──────────────────────────

@@ -9,9 +9,14 @@ await new SbomBuilder()
     {
         meta.Version = "1.0.0";
     })
-    
     .ForProject("ExampleClassLibrary1/ExampleClassLibrary1.csproj")
-    .ForProject("ExampleClassLibrary2/ExampleClassLibrary2.csproj")
+    .ForProject("ExampleClassLibrary2/ExampleClassLibrary2.csproj", component =>
+    {
+        component.WithMetadata(meta =>
+        {
+            meta.Cpe = "cpe:2.3:a:example:exampleclasslibrary2:1.0.0:*:*:*:*:*:*:*";
+        });
+    })
     .ForProject("ExampleConsoleApp1/ExampleConsoleApp1.csproj", component => component
         .WithComponent(c =>
         {

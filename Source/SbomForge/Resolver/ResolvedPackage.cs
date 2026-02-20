@@ -8,9 +8,8 @@ internal class ResolvedPackage
     public string Id { get; set; } = null!;
     public string Version { get; set; } = null!;
     public string? PackageHash { get; set; }
-    public string? LicenseExpression { get; set; }
-    public string? ProjectUrl { get; set; }
-    public string? Description { get; set; }
+    public Nuspec? Nuspec { get; set; } = null!;
     public bool IsDirect { get; set; }
+    
     public List<string> DependsOn { get; } = [];
 }

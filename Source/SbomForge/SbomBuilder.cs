@@ -452,16 +452,17 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
 
                         if (isNuGetPackage)
                         {
+                            // Attempt to locate and parse the .nuspec file from the global NuGet packages cache.
+                            Nuspec? nuspec = TryReadNuspecFromGlobalPackages(comp.Name, comp.Version);
+
                             // Add as a package
                             graph.Packages.Add(new ResolvedPackage
                             {
                                 Id = comp.Name ?? "unknown",
                                 Version = comp.Version ?? "0.0.0",
                                 IsDirect = false, // External dependencies are transitive
-                                LicenseExpression = comp.Licenses?.FirstOrDefault()?.License?.Id,
-                                Description = comp.Description,
-                                ProjectUrl = comp.ExternalReferences?.FirstOrDefault(r => r.Type == CycloneDX.Models.ExternalReference.ExternalReferenceType.Website)?.Url?.ToString(),
-                                PackageHash = null
+                                PackageHash = null,
+                                Nuspec = nuspec
                             });
                         }
                         else
@@ -553,9 +554,7 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
                                     Id = pkg.Id,
                                     Version = pkg.Version,
                                     IsDirect = false,  // Transitive dependency
-                                    LicenseExpression = pkg.LicenseExpression,
-                                    Description = pkg.Description,
-                                    ProjectUrl = pkg.ProjectUrl,
+                                    Nuspec = pkg.Nuspec,
                                     PackageHash = pkg.PackageHash
                                 };
                                 
@@ -688,6 +687,51 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
         _component.CustomComponents.Add(config);
         
         return this;
+    }
+
+    // ──────────────────────── NuSpec Lookup ────────────────────────
+
+    /// <summary>
+    /// Attempts to locate and parse the .nuspec file for a NuGet package
+    /// from the global NuGet packages cache. Returns <see langword="null"/> if
+    /// the packages directory or nuspec file cannot be found.
+    /// </summary>
+    /// <param name="packageId">The NuGet package ID (case-insensitive).</param>
+    /// <param name="version">The exact package version string.</param>
+    /// <returns>A parsed <see cref="Nuspec"/> instance, or <see langword="null"/>.</returns>
+    private static Nuspec? TryReadNuspecFromGlobalPackages(string? packageId, string? version)
+    {
+        if (string.IsNullOrEmpty(packageId) || string.IsNullOrEmpty(version))
+            return null;
+
+        // Honour the NUGET_PACKAGES environment variable, then fall back to the
+        // platform-default location (~/.nuget/packages on Linux/macOS/Windows).
+        string? packagesPath = Environment.GetEnvironmentVariable("NUGET_PACKAGES");
+        if (string.IsNullOrEmpty(packagesPath))
+        {
+            string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            packagesPath = Path.Combine(home, ".nuget", "packages");
+        }
+
+        if (!Directory.Exists(packagesPath))
+            return null;
+
+        // Convention: {packagesPath}/{id.ToLower()}/{version}/{id.ToLower()}.nuspec
+        string idLower = packageId.ToLowerInvariant();
+        string nuspecPath = Path.Combine(packagesPath, idLower, version, $"{idLower}.nuspec");
+
+        if (!File.Exists(nuspecPath))
+            return null;
+
+        try
+        {
+            using Stream stream = File.OpenRead(nuspecPath);
+            return Nuspec.FromFile(stream);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     // ──────────────────────── Auto-Detect Defaults ────────────────────────
