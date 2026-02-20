@@ -250,30 +250,15 @@ internal class Composer
 
     private Metadata BuildMetadata(ComponentConfiguration subject)
     {
-        Metadata metadata = new()
+        if (subject.Type == Component.Classification.Null)
+            subject.Type = Component.Classification.Application;
+
+        return new Metadata
         {
             Timestamp = DateTime.UtcNow,
             Tools = BuildToolChoices(),
-            Component = new Component
-            {
-                Type = subject.Type != Component.Classification.Null
-                    ? subject.Type
-                    : Component.Classification.Application,
-                BomRef = subject.BomRef,
-                Name = subject.Name,
-                Version = subject.Version,
-                Description = subject.Description,
-                Cpe = subject.Cpe,
-                Purl = subject.Purl,
-                Publisher = subject.Publisher,
-                Copyright = subject.Copyright,
-                Supplier = subject.Supplier,
-                Group = subject.Group,
-                Licenses = subject.Licenses
-            }
+            Component = subject
         };
-
-        return metadata;
     }
 
     /// <summary>
@@ -392,28 +377,18 @@ internal class Composer
 
         if (registryEntry is not null)
         {
-            // Use registry values for consistency.
+            if (registryEntry.Type == Component.Classification.Null)
+                registryEntry.Type = Component.Classification.Library;
+
             string purl = registryEntry.Purl
                 ?? $"pkg:generic/{registryEntry.Name ?? projRef.Name}@{registryEntry.Version ?? projRef.Version ?? "0.0.0"}";
 
-            return new Component
-            {
-                Type = registryEntry.Type != Component.Classification.Null
-                    ? registryEntry.Type
-                    : Component.Classification.Library,
-                BomRef = registryEntry.BomRef ?? purl,
-                Name = registryEntry.Name ?? projRef.Name,
-                Version = registryEntry.Version ?? projRef.Version,
-                Description = registryEntry.Description,
-                Cpe = registryEntry.Cpe,
-                Purl = purl,
-                Publisher = registryEntry.Publisher,
-                Copyright = registryEntry.Copyright,
-                Supplier = registryEntry.Supplier,
-                Group = registryEntry.Group,
-                Licenses = registryEntry.Licenses,
-                Scope = Component.ComponentScope.Required
-            };
+            registryEntry.Purl = purl;
+            registryEntry.BomRef ??= purl;
+            registryEntry.Name ??= projRef.Name;
+            registryEntry.Version ??= projRef.Version;
+
+            return registryEntry;
         }
 
         // Fallback: auto-detect from resolved path if available.
@@ -458,36 +433,17 @@ internal class Composer
     /// </summary>
     private static Component BuildCustomComponent(ComponentConfiguration config)
     {
-        // Ensure BomRef is set
+        if (config.Type == Component.Classification.Null)
+            config.Type = Component.Classification.Library;
+
         string bomRef = config.BomRef
             ?? config.Purl
             ?? $"pkg:generic/{config.Name ?? "unknown"}@{config.Version ?? "0.0.0"}";
 
-        // Ensure Purl is set
-        string purl = config.Purl ?? bomRef;
+        config.BomRef = bomRef;
+        config.Purl ??= bomRef;
 
-        return new Component
-        {
-            Type = config.Type != Component.Classification.Null
-                ? config.Type
-                : Component.Classification.Library,
-            BomRef = bomRef,
-            Name = config.Name,
-            Version = config.Version,
-            Description = config.Description,
-            Cpe = config.Cpe,
-            Purl = purl,
-            Publisher = config.Publisher,
-            Copyright = config.Copyright,
-            Supplier = config.Supplier,
-            Group = config.Group,
-            Licenses = config.Licenses,
-            ExternalReferences = config.ExternalReferences,
-            Hashes = config.Hashes,
-            Properties = config.Properties,
-            Evidence = config.Evidence,
-            Scope = config.Scope
-        };
+        return config;
     }
 
     // ──────────────────────── Serialize & Write ──────────────────────────

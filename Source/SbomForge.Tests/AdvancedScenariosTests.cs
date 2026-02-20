@@ -491,10 +491,10 @@ public sealed class AdvancedScenariosTests
 
     #endregion
 
-    #region CPE Propagation Tests
+    #region Component Metadata Propagation Tests
 
     [TestMethod]
-    public async Task Cpe_SetOnMetadataComponent_AppearsInSbomMetadata()
+    public async Task Metadata_AllFields_PropagatedToProjectSbomMetadata()
     {
         // Arrange & Act
         var result = await new SbomBuilder()
@@ -503,19 +503,47 @@ public sealed class AdvancedScenariosTests
             .ForProject("ExampleClassLibrary1/ExampleClassLibrary1.csproj", config => config
                 .WithMetadata(meta =>
                 {
-                    meta.Cpe = "cpe:2.3:a:example:library:1.0.0:*:*:*:*:*:*:*";
+                    meta.Name = "ExampleClassLibrary1";
+                    meta.Version = "3.0.0";
+                    meta.Description = "My library description";
+                    meta.Publisher = "My Publisher";
+                    meta.Copyright = "Copyright 2025";
+                    meta.Group = "com.example";
+                    meta.Cpe = "cpe:2.3:a:example:library:3.0.0:*:*:*:*:*:*:*";
+                    meta.Purl = "pkg:nuget/ExampleClassLibrary1@3.0.0";
+                    meta.Properties = [new Property { Name = "custom", Value = "value" }];
+                    meta.ExternalReferences =
+                    [
+                        new ExternalReference
+                        {
+                            Type = ExternalReference.ExternalReferenceType.Website,
+                            Url = "https://example.com"
+                        }
+                    ];
                 }))
             .BuildAsync();
 
         // Assert
-        var bom = result.Boms["ExampleClassLibrary1"];
-        Assert.AreEqual("cpe:2.3:a:example:library:1.0.0:*:*:*:*:*:*:*",
-            bom.Metadata!.Component!.Cpe,
-            "CPE should be present on the metadata component");
+        var component = result.Boms["ExampleClassLibrary1"].Metadata!.Component!;
+        Assert.AreEqual("ExampleClassLibrary1", component.Name);
+        Assert.AreEqual("3.0.0", component.Version);
+        Assert.AreEqual("My library description", component.Description);
+        Assert.AreEqual("My Publisher", component.Publisher);
+        Assert.AreEqual("Copyright 2025", component.Copyright);
+        Assert.AreEqual("com.example", component.Group);
+        Assert.AreEqual("cpe:2.3:a:example:library:3.0.0:*:*:*:*:*:*:*", component.Cpe);
+        Assert.AreEqual("pkg:nuget/ExampleClassLibrary1@3.0.0", component.Purl);
+        Assert.IsNotNull(component.Properties);
+        Assert.AreEqual(1, component.Properties.Count);
+        Assert.AreEqual("custom", component.Properties[0].Name);
+        Assert.AreEqual("value", component.Properties[0].Value);
+        Assert.IsNotNull(component.ExternalReferences);
+        Assert.AreEqual(1, component.ExternalReferences.Count);
+        Assert.AreEqual("https://example.com", component.ExternalReferences[0].Url);
     }
 
     [TestMethod]
-    public async Task Cpe_SetOnCustomComponent_AppearsInComponents()
+    public async Task Metadata_AllFields_PropagatedToCustomComponent()
     {
         // Arrange & Act
         var result = await new SbomBuilder()
@@ -527,22 +555,46 @@ public sealed class AdvancedScenariosTests
                     c.Name = "openssl";
                     c.Version = "3.0.0";
                     c.Type = Component.Classification.Library;
-                    c.Purl = "pkg:generic/openssl@3.0.0";
+                    c.Description = "OpenSSL library";
+                    c.Publisher = "OpenSSL Foundation";
+                    c.Copyright = "Copyright OpenSSL";
+                    c.Group = "org.openssl";
                     c.Cpe = "cpe:2.3:a:openssl:openssl:3.0.0:*:*:*:*:*:*:*";
+                    c.Purl = "pkg:generic/openssl@3.0.0";
+                    c.Properties = [new Property { Name = "env", Value = "production" }];
+                    c.ExternalReferences =
+                    [
+                        new ExternalReference
+                        {
+                            Type = ExternalReference.ExternalReferenceType.Website,
+                            Url = "https://openssl.org"
+                        }
+                    ];
                 }))
             .BuildAsync();
 
         // Assert
         var bom = result.Boms["ExampleConsoleApp1"];
         var openssl = bom.Components!.FirstOrDefault(c => c.Name == "openssl");
-
         Assert.IsNotNull(openssl, "openssl component should be in BOM");
-        Assert.AreEqual("cpe:2.3:a:openssl:openssl:3.0.0:*:*:*:*:*:*:*", openssl.Cpe,
-            "CPE should be present on the custom component");
+        Assert.AreEqual("3.0.0", openssl.Version);
+        Assert.AreEqual("OpenSSL library", openssl.Description);
+        Assert.AreEqual("OpenSSL Foundation", openssl.Publisher);
+        Assert.AreEqual("Copyright OpenSSL", openssl.Copyright);
+        Assert.AreEqual("org.openssl", openssl.Group);
+        Assert.AreEqual("cpe:2.3:a:openssl:openssl:3.0.0:*:*:*:*:*:*:*", openssl.Cpe);
+        Assert.AreEqual("pkg:generic/openssl@3.0.0", openssl.Purl);
+        Assert.IsNotNull(openssl.Properties);
+        Assert.AreEqual(1, openssl.Properties.Count);
+        Assert.AreEqual("env", openssl.Properties[0].Name);
+        Assert.AreEqual("production", openssl.Properties[0].Value);
+        Assert.IsNotNull(openssl.ExternalReferences);
+        Assert.AreEqual(1, openssl.ExternalReferences.Count);
+        Assert.AreEqual("https://openssl.org", openssl.ExternalReferences[0].Url);
     }
 
     [TestMethod]
-    public async Task Cpe_SetOnForComponentMetadata_AppearsInSbomMetadata()
+    public async Task Metadata_AllFields_PropagatedToForComponentSbomMetadata()
     {
         // Arrange & Act
         var result = await new SbomBuilder()
@@ -554,15 +606,28 @@ public sealed class AdvancedScenariosTests
                     m.Name = "my-app";
                     m.Version = "2.0.0";
                     m.Type = Component.Classification.Application;
+                    m.Description = "My application";
+                    m.Publisher = "My Org";
+                    m.Copyright = "Copyright 2025 My Org";
                     m.Cpe = "cpe:2.3:a:myorg:my-app:2.0.0:*:*:*:*:*:*:*";
+                    m.Purl = "pkg:generic/my-app@2.0.0";
+                    m.Properties = [new Property { Name = "tier", Value = "backend" }];
                 }))
             .BuildAsync();
 
         // Assert
-        var bom = result.Boms["my-app"];
-        Assert.AreEqual("cpe:2.3:a:myorg:my-app:2.0.0:*:*:*:*:*:*:*",
-            bom.Metadata!.Component!.Cpe,
-            "CPE should be present on the metadata component of a ForComponent SBOM");
+        var component = result.Boms["my-app"].Metadata!.Component!;
+        Assert.AreEqual("my-app", component.Name);
+        Assert.AreEqual("2.0.0", component.Version);
+        Assert.AreEqual("My application", component.Description);
+        Assert.AreEqual("My Org", component.Publisher);
+        Assert.AreEqual("Copyright 2025 My Org", component.Copyright);
+        Assert.AreEqual("cpe:2.3:a:myorg:my-app:2.0.0:*:*:*:*:*:*:*", component.Cpe);
+        Assert.AreEqual("pkg:generic/my-app@2.0.0", component.Purl);
+        Assert.IsNotNull(component.Properties);
+        Assert.AreEqual(1, component.Properties.Count);
+        Assert.AreEqual("tier", component.Properties[0].Name);
+        Assert.AreEqual("backend", component.Properties[0].Value);
     }
 
     #endregion
