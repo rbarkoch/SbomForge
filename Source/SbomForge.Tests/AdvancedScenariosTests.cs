@@ -491,6 +491,82 @@ public sealed class AdvancedScenariosTests
 
     #endregion
 
+    #region CPE Propagation Tests
+
+    [TestMethod]
+    public async Task Cpe_SetOnMetadataComponent_AppearsInSbomMetadata()
+    {
+        // Arrange & Act
+        var result = await new SbomBuilder()
+            .WithBasePath(_testBasePath)
+            .WithOutput(o => o.OutputDirectory = _outputDirectory)
+            .ForProject("ExampleClassLibrary1/ExampleClassLibrary1.csproj", config => config
+                .WithMetadata(meta =>
+                {
+                    meta.Cpe = "cpe:2.3:a:example:library:1.0.0:*:*:*:*:*:*:*";
+                }))
+            .BuildAsync();
+
+        // Assert
+        var bom = result.Boms["ExampleClassLibrary1"];
+        Assert.AreEqual("cpe:2.3:a:example:library:1.0.0:*:*:*:*:*:*:*",
+            bom.Metadata!.Component!.Cpe,
+            "CPE should be present on the metadata component");
+    }
+
+    [TestMethod]
+    public async Task Cpe_SetOnCustomComponent_AppearsInComponents()
+    {
+        // Arrange & Act
+        var result = await new SbomBuilder()
+            .WithBasePath(_testBasePath)
+            .WithOutput(o => o.OutputDirectory = _outputDirectory)
+            .ForProject("ExampleConsoleApp1/ExampleConsoleApp1.csproj", config => config
+                .WithComponent(c =>
+                {
+                    c.Name = "openssl";
+                    c.Version = "3.0.0";
+                    c.Type = Component.Classification.Library;
+                    c.Purl = "pkg:generic/openssl@3.0.0";
+                    c.Cpe = "cpe:2.3:a:openssl:openssl:3.0.0:*:*:*:*:*:*:*";
+                }))
+            .BuildAsync();
+
+        // Assert
+        var bom = result.Boms["ExampleConsoleApp1"];
+        var openssl = bom.Components!.FirstOrDefault(c => c.Name == "openssl");
+
+        Assert.IsNotNull(openssl, "openssl component should be in BOM");
+        Assert.AreEqual("cpe:2.3:a:openssl:openssl:3.0.0:*:*:*:*:*:*:*", openssl.Cpe,
+            "CPE should be present on the custom component");
+    }
+
+    [TestMethod]
+    public async Task Cpe_SetOnForComponentMetadata_AppearsInSbomMetadata()
+    {
+        // Arrange & Act
+        var result = await new SbomBuilder()
+            .WithBasePath(_testBasePath)
+            .WithOutput(o => o.OutputDirectory = _outputDirectory)
+            .ForComponent(comp => comp
+                .WithMetadata(m =>
+                {
+                    m.Name = "my-app";
+                    m.Version = "2.0.0";
+                    m.Type = Component.Classification.Application;
+                    m.Cpe = "cpe:2.3:a:myorg:my-app:2.0.0:*:*:*:*:*:*:*";
+                }))
+            .BuildAsync();
+
+        // Assert
+        var bom = result.Boms["my-app"];
+        Assert.AreEqual("cpe:2.3:a:myorg:my-app:2.0.0:*:*:*:*:*:*:*",
+            bom.Metadata!.Component!.Cpe,
+            "CPE should be present on the metadata component of a ForComponent SBOM");
+    }
+
+    #endregion
+
     #region Tool Metadata Tests
 
     [TestMethod]
