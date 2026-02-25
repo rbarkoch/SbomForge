@@ -9,7 +9,7 @@ if(args.Length >= 1)
 }
 
 var result = await new SbomBuilder()
-    .WithBasePath("./Source")
+    .WithBasePathFromSolution("SbomForge.slnx")
     .ForProject("SbomForge/SbomForge.csproj", component =>
     {
         component.WithMetadata(meta => 
