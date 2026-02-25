@@ -25,7 +25,7 @@ internal static class VersionHelper
         {
             // Strip commit metadata (e.g., "+abc1234") from the informational version.
             int plusIndex = informationalVersion!.IndexOf('+');
-            return plusIndex >= 0 ? informationalVersion[..plusIndex] : informationalVersion;
+            return plusIndex >= 0 ? informationalVersion.Substring(0, plusIndex) : informationalVersion;
         }
 
         return assembly.GetName().Version?.ToString() ?? "0.0.0";
