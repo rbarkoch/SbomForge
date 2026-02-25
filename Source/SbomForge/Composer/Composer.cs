@@ -266,7 +266,9 @@ internal class Composer
         {
             Timestamp = DateTime.UtcNow,
             Tools = BuildToolChoices(),
-            Component = subject
+            // Convert to a plain Component to avoid protobuf "Unexpected sub-type" errors
+            // when CycloneDX performs its internal deep-copy during serialization.
+            Component = subject.ToComponent()
         };
     }
 
@@ -415,7 +417,7 @@ internal class Composer
             registryEntry.Name ??= projRef.Name;
             registryEntry.Version ??= projRef.Version;
 
-            return registryEntry;
+            return registryEntry.ToComponent();
         }
 
         // Fallback: auto-detect from resolved path if available.
@@ -470,7 +472,7 @@ internal class Composer
         config.BomRef = bomRef;
         config.Purl ??= bomRef;
 
-        return config;
+        return config.ToComponent();
     }
 
     // ──────────────────────── Serialize & Write ──────────────────────────

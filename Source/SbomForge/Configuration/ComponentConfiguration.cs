@@ -16,6 +16,28 @@ public class ComponentConfiguration : Component
             .ToArray();
 
     /// <summary>
+    /// Returns a new plain <see cref="Component"/> instance with all property values copied
+    /// from this <see cref="ComponentConfiguration"/>.
+    /// This is required when passing the component to CycloneDX APIs that perform protobuf
+    /// serialization (e.g. for deep-copy or spec-version downgrade), because protobuf does not
+    /// know about this subtype and would throw <see cref="InvalidOperationException"/>.
+    /// </summary>
+    public Component ToComponent()
+    {
+        Component target = new();
+        foreach (PropertyInfo prop in _componentProperties)
+        {
+            object? value;
+            try { value = prop.GetValue(this); }
+            catch { continue; }
+
+            try { prop.SetValue(target, value); }
+            catch { continue; }
+        }
+        return target;
+    }
+
+    /// <summary>
     /// Copies all non-default property values from <paramref name="source"/> onto this instance.
     /// String properties are skipped when null or empty; enum properties are skipped when zero
     /// (the conventional "not set" sentinel used by CycloneDX); collections are skipped when
