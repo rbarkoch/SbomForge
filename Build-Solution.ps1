@@ -11,7 +11,7 @@ Write-Host "Building SbomForge solution with configuration: $Configuration" -For
 $SolutionPath = Join-Path $PSScriptRoot 'Source' 'SbomForge.slnx'
 
 # Build the solution
-dotnet build $SolutionPath --configuration $Configuration
+dotnet build $SolutionPath --configuration $Configuration --no-incremental
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Build failed with exit code $LASTEXITCODE"

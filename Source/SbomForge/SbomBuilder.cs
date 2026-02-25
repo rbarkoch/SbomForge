@@ -719,8 +719,9 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
             return null;
 
         // Convention: {packagesPath}/{id.ToLower()}/{version}/{id.ToLower()}.nuspec
-        string idLower = packageId.ToLowerInvariant();
-        string nuspecPath = Path.Combine(packagesPath, idLower, version, $"{idLower}.nuspec");
+        // packageId and version are known non-null here — guarded by IsNullOrEmpty check above.
+        string idLower = packageId!.ToLowerInvariant();
+        string nuspecPath = Path.Combine(packagesPath, idLower, version!, $"{idLower}.nuspec");
 
         if (!File.Exists(nuspecPath))
             return null;

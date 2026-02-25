@@ -343,38 +343,42 @@ internal class Composer
         // Nuspec.
         if(pkg.Nuspec is not null)
         {
-            if(!string.IsNullOrWhiteSpace(pkg.Nuspec.Metadata.Description))
+            var meta = pkg.Nuspec.Metadata;
+            if (meta is not null)
             {
-                component.Description = pkg.Nuspec.Metadata.Description;
-            }
+                if(!string.IsNullOrWhiteSpace(meta.Description))
+                {
+                    component.Description = meta.Description;
+                }
 
-            if(!string.IsNullOrWhiteSpace(pkg.Nuspec.Metadata.Copyright))
-            {
-                component.Copyright = pkg.Nuspec.Metadata.Copyright;
-            }
+                if(!string.IsNullOrWhiteSpace(meta.Copyright))
+                {
+                    component.Copyright = meta.Copyright;
+                }
 
-            if(!string.IsNullOrWhiteSpace(pkg.Nuspec.Metadata.Authors))
-            {
-                component.Authors = [.. pkg.Nuspec.Metadata.Authors.Split(',').Where(a => !string.IsNullOrWhiteSpace(a)).Select(a => new OrganizationalContact(){ Name = a.Trim()})];
-            }
+                if(!string.IsNullOrWhiteSpace(meta.Authors))
+                {
+                    component.Authors = [.. meta.Authors!.Split(',').Where(a => !string.IsNullOrWhiteSpace(a)).Select(a => new OrganizationalContact(){ Name = a.Trim()})];
+                }
 
-            if(!string.IsNullOrWhiteSpace(pkg.Nuspec.Metadata.License.Type))
-            {
-                component.Licenses = [new LicenseChoice() {
-                    Expression = pkg.Nuspec.Metadata.License.Text
-                }];
-            }
+                if(!string.IsNullOrWhiteSpace(meta.License?.Type))
+                {
+                    component.Licenses = [new LicenseChoice() {
+                        Expression = meta.License!.Text
+                    }];
+                }
 
-            if (!string.IsNullOrWhiteSpace(pkg.Nuspec.Metadata.ProjectUrl))
-            {
-                component.ExternalReferences =
-                [
-                    new ExternalReference
-                    {
-                        Type = ExternalReference.ExternalReferenceType.Website,
-                        Url = pkg.Nuspec.Metadata.ProjectUrl
-                    }
-                ];
+                if (!string.IsNullOrWhiteSpace(meta.ProjectUrl))
+                {
+                    component.ExternalReferences =
+                    [
+                        new ExternalReference
+                        {
+                            Type = ExternalReference.ExternalReferenceType.Website,
+                            Url = meta.ProjectUrl
+                        }
+                    ];
+                }
             }
         }
 
