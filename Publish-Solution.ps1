@@ -14,7 +14,7 @@ Write-Host "Publishing SbomForge with configuration: $Configuration, version: $V
 # Define paths
 $PublishDir = Join-Path $PSScriptRoot 'Publish'
 $SbomForgeProject = Join-Path $PSScriptRoot 'Source' 'SbomForge' 'SbomForge.csproj'
-$SbomToolProject = Join-Path $PSScriptRoot 'Source' 'SbomForge.Sbom' 'SbomForge.Sbom.csproj'
+$GenerateSbomScript = Join-Path $PSScriptRoot 'GenerateSbom.cs'
 
 # Create Publish directory if it doesn't exist
 if (-not (Test-Path $PublishDir)) {
@@ -34,19 +34,9 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
-# Build the SbomForge.Sbom tool
-Write-Host "Building SbomForge.Sbom tool..." -ForegroundColor Cyan
-dotnet build $SbomToolProject --configuration $Configuration
-
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Build of SbomForge.Sbom failed with exit code $LASTEXITCODE"
-    exit $LASTEXITCODE
-}
-
-# Run the SbomForge.Sbom tool to generate SBOM
+# Generate SBOM using the file-based script
 Write-Host "Generating SBOM..." -ForegroundColor Cyan
-$SbomToolProj = Join-Path $PSScriptRoot 'Source' 'SbomForge.Sbom' 'SbomForge.Sbom.csproj'
-dotnet run --project $SbomToolProj -- $Version
+dotnet $GenerateSbomScript -- $Version
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "SBOM generation failed with exit code $LASTEXITCODE"

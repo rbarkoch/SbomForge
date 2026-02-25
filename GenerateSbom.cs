@@ -1,4 +1,7 @@
-﻿using SbomForge;
+#:project Source/SbomForge/SbomForge.csproj
+#:property PublishAot=false
+
+using SbomForge;
 
 Console.WriteLine("Generating SBOM for SbomForge...");
 
@@ -9,7 +12,7 @@ if(args.Length >= 1)
 }
 
 var result = await new SbomBuilder()
-    .WithBasePathFromSolution("SbomForge.slnx")
+    .WithBasePath("Source")
     .ForProject("SbomForge/SbomForge.csproj", component =>
     {
         component.WithMetadata(meta => 

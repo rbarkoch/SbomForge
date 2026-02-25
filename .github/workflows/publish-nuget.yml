@@ -33,11 +33,12 @@ jobs:
           dotnet-version: |
             8.0.x
             9.0.x
+            10.0.x
 
       - name: Restore dependencies
         run: dotnet restore Source/SbomForge.slnx
 
-      - name: Build and Pack
+      - name: Pack and Generate SBOM
         shell: pwsh
         run: |
           ./Publish-Solution.ps1 -Version ${{ steps.version.outputs.VERSION }} -Configuration Release
