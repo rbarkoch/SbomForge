@@ -875,7 +875,7 @@ public sealed class SbomForgeTests
     public async Task SpecVersion_UnsupportedVersion_ThrowsArgumentOutOfRangeException()
     {
         // Arrange & Act
-        await Assert.ThrowsExceptionAsync<ArgumentOutOfRangeException>(async () =>
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
         {
             await new SbomBuilder()
                 .WithBasePath(_testBasePath)
@@ -886,7 +886,7 @@ public sealed class SbomForgeTests
                 })
                 .ForProject("ExampleClassLibrary1/ExampleClassLibrary1.csproj")
                 .BuildAsync();
-        }, "Spec versions below v1.4 should throw ArgumentOutOfRangeException");
+        });
     }
 
     #endregion
