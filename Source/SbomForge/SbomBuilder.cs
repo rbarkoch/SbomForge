@@ -495,7 +495,7 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
             // Add project-specific external dependencies
             AddExternalDependenciesToGraph(graph, config.ExternalDependencies, $"project:{graph.SourceProjectPath}", includeTransitive);
 
-            Composer.Composer composer = new(graph, config, basePath, projectRegistry, _tool);
+            Composer.Composer composer = new(graph, config, basePath, projectRegistry, _tool, _component.Component);
             ComposerResult composerResult = await composer.ComposeAsync();
 
             result.WrittenFilePaths.Add(composerResult.OutputPath);
@@ -609,7 +609,7 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
             AddExternalDependenciesToGraph(graph, customComp.ExternalDependencies, $"custom:{effectiveConfig.Component.Name ?? customComp.GetHashCode().ToString()}", includeTransitive);
 
             // Compose SBOM
-            Composer.Composer composer = new(graph, effectiveConfig, basePath, projectRegistry, _tool);
+            Composer.Composer composer = new(graph, effectiveConfig, basePath, projectRegistry, _tool, _component.Component);
             ComposerResult composerResult = await composer.ComposeAsync();
 
             result.WrittenFilePaths.Add(composerResult.OutputPath);
