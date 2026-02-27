@@ -327,7 +327,7 @@ internal class Composer
                 : Component.ComponentScope.Optional
         };
 
-        // Hashes.
+        // Hashes – NuGet stores SHA-512 as Base64; CycloneDX requires hex encoding.
         if (!string.IsNullOrEmpty(pkg.PackageHash))
         {
             component.Hashes =
@@ -335,7 +335,7 @@ internal class Composer
                 new Hash
                 {
                     Alg = Hash.HashAlgorithm.SHA_512,
-                    Content = pkg.PackageHash
+                    Content = ConvertBase64ToHex(pkg.PackageHash)
                 }
             ];
         }
@@ -477,6 +477,18 @@ internal class Composer
         config.Purl ??= bomRef;
 
         return config.ToComponent();
+    }
+
+    // ──────────────────────── Hash Encoding ────────────────────────────────
+
+    /// <summary>
+    /// Converts a Base64-encoded hash string to lowercase hexadecimal.
+    /// NuGet stores package hashes as Base64, but CycloneDX requires hex-encoded digests.
+    /// </summary>
+    private static string ConvertBase64ToHex(string base64Hash)
+    {
+        byte[] bytes = Convert.FromBase64String(base64Hash);
+        return BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
     }
 
     // ──────────────────────── Serialize & Write ──────────────────────────
