@@ -890,4 +890,115 @@ public sealed class SbomForgeTests
     }
 
     #endregion
+
+    #region Global Metadata for Project References Tests
+
+    [TestMethod]
+    public async Task GlobalMetadata_DefaultOn_AppliesVersionToUnregisteredProjectReferences()
+    {
+        // Arrange & Act
+        // Only register ExampleConsoleApp1; its project reference ExampleClassLibrary1
+        // is NOT registered, so it goes through the fallback path.
+        var result = await new SbomBuilder()
+            .WithBasePath(_testBasePath)
+            .WithOutput(o => o.OutputDirectory = _outputDirectory)
+            .WithMetadata(meta =>
+            {
+                meta.Version = "3.0.0";
+            })
+            .ForProject("ExampleConsoleApp1/ExampleConsoleApp1.csproj")
+            .BuildAsync();
+
+        // Assert
+        var bom = result.Boms["ExampleConsoleApp1"];
+        var lib1Component = bom.Components!
+            .FirstOrDefault(c => c.Name == "ExampleClassLibrary1");
+
+        Assert.IsNotNull(lib1Component, "ExampleClassLibrary1 should be in components");
+        Assert.AreEqual("3.0.0", lib1Component.Version,
+            "Global version should be applied to unregistered project reference");
+    }
+
+    [TestMethod]
+    public async Task GlobalMetadata_DefaultOn_AppliesCopyrightToUnregisteredProjectReferences()
+    {
+        // Arrange & Act
+        var result = await new SbomBuilder()
+            .WithBasePath(_testBasePath)
+            .WithOutput(o => o.OutputDirectory = _outputDirectory)
+            .WithMetadata(meta =>
+            {
+                meta.Copyright = "Copyright 2026 Test Corp";
+            })
+            .ForProject("ExampleConsoleApp1/ExampleConsoleApp1.csproj")
+            .BuildAsync();
+
+        // Assert
+        var bom = result.Boms["ExampleConsoleApp1"];
+        var lib1Component = bom.Components!
+            .FirstOrDefault(c => c.Name == "ExampleClassLibrary1");
+
+        Assert.IsNotNull(lib1Component, "ExampleClassLibrary1 should be in components");
+        Assert.AreEqual("Copyright 2026 Test Corp", lib1Component.Copyright,
+            "Global copyright should be applied to unregistered project reference");
+    }
+
+    [TestMethod]
+    public async Task GlobalMetadata_ExplicitlyDisabled_DoesNotApplyToProjectReferences()
+    {
+        // Arrange & Act
+        var result = await new SbomBuilder()
+            .WithBasePath(_testBasePath)
+            .WithOutput(o => o.OutputDirectory = _outputDirectory)
+            .WithMetadata(meta =>
+            {
+                meta.Version = "3.0.0";
+                meta.Copyright = "Copyright 2026 Test Corp";
+            })
+            .WithResolution(r => r.UseGlobalMetadataForProjectReferences = false)
+            .ForProject("ExampleConsoleApp1/ExampleConsoleApp1.csproj")
+            .BuildAsync();
+
+        // Assert
+        var bom = result.Boms["ExampleConsoleApp1"];
+        var lib1Component = bom.Components!
+            .FirstOrDefault(c => c.Name == "ExampleClassLibrary1");
+
+        Assert.IsNotNull(lib1Component, "ExampleClassLibrary1 should be in components");
+        Assert.AreNotEqual("3.0.0", lib1Component.Version,
+            "Global version should NOT be applied when UseGlobalMetadataForProjectReferences is false");
+        Assert.IsNull(lib1Component.Copyright,
+            "Global copyright should NOT be applied when UseGlobalMetadataForProjectReferences is false");
+    }
+
+    [TestMethod]
+    public async Task GlobalMetadata_DefaultOn_AppliesMultipleFieldsToProjectReferences()
+    {
+        // Arrange & Act
+        var result = await new SbomBuilder()
+            .WithBasePath(_testBasePath)
+            .WithOutput(o => o.OutputDirectory = _outputDirectory)
+            .WithMetadata(meta =>
+            {
+                meta.Version = "5.0.0";
+                meta.Copyright = "Copyright 2026 Acme Inc";
+                meta.Publisher = "Acme Inc";
+                meta.Description = "Global component description";
+            })
+            .ForProject("ExampleConsoleApp1/ExampleConsoleApp1.csproj")
+            .BuildAsync();
+
+        // Assert
+        var bom = result.Boms["ExampleConsoleApp1"];
+        var lib1Component = bom.Components!
+            .FirstOrDefault(c => c.Name == "ExampleClassLibrary1");
+
+        Assert.IsNotNull(lib1Component, "ExampleClassLibrary1 should be in components");
+        Assert.AreEqual("5.0.0", lib1Component.Version, "Global version should be applied");
+        Assert.AreEqual("Copyright 2026 Acme Inc", lib1Component.Copyright, "Global copyright should be applied");
+        Assert.AreEqual("Acme Inc", lib1Component.Publisher, "Global publisher should be applied");
+        Assert.AreEqual("Global component description", lib1Component.Description, "Global description should be applied");
+    }
+
+    #endregion
 }

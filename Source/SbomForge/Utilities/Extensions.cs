@@ -30,7 +30,8 @@ internal static class Extensions
         ResolutionConfiguration merged = new()
         {
             IncludeTransitive = resolution.IncludeTransitive,
-            TargetFramework = resolution.TargetFramework
+            TargetFramework = resolution.TargetFramework,
+            UseGlobalMetadataForProjectReferences = resolution.UseGlobalMetadataForProjectReferences
         };
 
         foreach(ResolutionConfiguration config in other)
@@ -43,6 +44,10 @@ internal static class Extensions
             if (!string.IsNullOrEmpty(config.TargetFramework))
             {
                 merged.TargetFramework = config.TargetFramework;
+            }
+            if (config.UseGlobalMetadataForProjectReferences.HasValue)
+            {
+                merged.UseGlobalMetadataForProjectReferences = config.UseGlobalMetadataForProjectReferences;
             }
         }
 
@@ -103,6 +108,7 @@ internal static class Extensions
             var mergedResolution = allResolutions.First().Merge(allResolutions.Skip(1).ToArray());
             merged.Resolution.IncludeTransitive = mergedResolution.IncludeTransitive;
             merged.Resolution.TargetFramework = mergedResolution.TargetFramework;
+            merged.Resolution.UseGlobalMetadataForProjectReferences = mergedResolution.UseGlobalMetadataForProjectReferences;
         }
 
         if (allOutputs.Count > 0)

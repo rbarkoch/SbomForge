@@ -21,19 +21,22 @@ internal class Composer
     private readonly string _basePath;
     private readonly IReadOnlyDictionary<string, ComponentConfiguration> _projectRegistry;
     private readonly ComponentConfiguration _tool;
+    private readonly ComponentConfiguration? _globalMetadata;
 
     public Composer(
         DependencyGraph graph,
         SbomConfiguration config,
         string basePath,
         IReadOnlyDictionary<string, ComponentConfiguration> projectRegistry,
-        ComponentConfiguration tool)
+        ComponentConfiguration tool,
+        ComponentConfiguration? globalMetadata = null)
     {
         _graph = graph;
         _config = config;
         _basePath = basePath;
         _projectRegistry = projectRegistry;
         _tool = tool;
+        _globalMetadata = globalMetadata;
     }
 
     /// <summary>
@@ -443,11 +446,21 @@ internal class Composer
             }
         }
 
+        // Apply global metadata overrides when configured.
+        bool useGlobalMetadata = (_config.Resolution.UseGlobalMetadataForProjectReferences ?? true)
+            && _globalMetadata is not null;
+
+        if (useGlobalMetadata)
+        {
+            if (!string.IsNullOrEmpty(_globalMetadata!.Version))
+                fallbackVersion = _globalMetadata.Version;
+        }
+
         fallbackPurl ??= fallbackType == Component.Classification.Application
             ? $"pkg:generic/{fallbackName}@{fallbackVersion}"
             : $"pkg:nuget/{fallbackName}@{fallbackVersion}";
 
-        return new Component
+        Component component = new()
         {
             Type = fallbackType,
             BomRef = fallbackPurl,
@@ -456,6 +469,22 @@ internal class Composer
             Purl = fallbackPurl,
             Scope = Component.ComponentScope.Required
         };
+
+        if (useGlobalMetadata)
+        {
+            if (!string.IsNullOrEmpty(_globalMetadata!.Copyright))
+                component.Copyright = _globalMetadata.Copyright;
+            if (!string.IsNullOrEmpty(_globalMetadata.Publisher))
+                component.Publisher = _globalMetadata.Publisher;
+            if (_globalMetadata.Supplier is not null)
+                component.Supplier = _globalMetadata.Supplier;
+            if (!string.IsNullOrEmpty(_globalMetadata.Description))
+                component.Description = _globalMetadata.Description;
+            if (_globalMetadata.Licenses is not null && _globalMetadata.Licenses.Count > 0)
+                component.Licenses = _globalMetadata.Licenses;
+        }
+
+        return component;
     }
 
     // ──────────────────────── Custom Components ──────────────────────────
