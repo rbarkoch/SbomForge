@@ -1,17 +1,17 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.7",
-  "serialNumber": "urn:uuid:ca3fc9df-3851-4e15-9d9e-0b58f5d6c550",
+  "serialNumber": "urn:uuid:85678e4d-1c8c-4190-936d-d0d3039aad69",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-02-20T22:19:28Z",
+    "timestamp": "2026-03-06T01:28:21Z",
     "tools": {
       "components": [
         {
           "type": "application",
           "group": "SbomForge",
           "name": "SbomForge",
-          "version": "1.0.0\u002B157258a70889c9abfa3a51c148877685b84055b8",
+          "version": "1.0.0",
           "externalReferences": [
             {
               "url": "https://github.com/rbarkoch/SbomForge",
@@ -57,7 +57,9 @@
       "name": "kubernetes",
       "version": "1.28",
       "scope": "excluded",
-      "purl": "pkg:generic/kubernetes@1.28"
+      "purl": "pkg:generic/kubernetes@1.28",
+      "modified": false,
+      "isExternal": false
     }
   ],
   "dependencies": [

@@ -296,6 +296,21 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
             if (externalConfig.Component.Licenses != null && externalConfig.Component.Licenses.Count > 0)
                 mainComponent.Licenses = externalConfig.Component.Licenses;
 
+            // Propagate all resolved (post-override) values back onto the BOM's metadata component
+            // so that AddExternalDependenciesToGraph reads the correct overridden values when
+            // constructing ResolvedProjectReferences.
+            externalMainComponent.Name = mainComponent.Name;
+            externalMainComponent.Version = mainComponent.Version;
+            externalMainComponent.Description = mainComponent.Description;
+            externalMainComponent.Type = mainComponent.Type;
+            externalMainComponent.BomRef = mainComponent.BomRef;
+            externalMainComponent.Purl = mainComponent.Purl;
+            externalMainComponent.Group = mainComponent.Group;
+            externalMainComponent.Publisher = mainComponent.Publisher;
+            externalMainComponent.Copyright = mainComponent.Copyright;
+            externalMainComponent.Supplier = mainComponent.Supplier;
+            externalMainComponent.Licenses = mainComponent.Licenses;
+
             // Handle BomRef collision by prefixing if necessary
             string originalBomRef = mainComponent.BomRef ?? $"pkg:generic/{mainComponent.Name}@{mainComponent.Version}";
             string bomRef = originalBomRef;
@@ -361,11 +376,30 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
             ProjectConfiguration project = _projects[i];
             SbomConfiguration effectiveConfig = _component.Merge(project.Sbom);
             
-            // Resolve project path to absolute to match graph.SourceProjectPath in Pass 2
+            // Resolve project path to absolute, mirroring DependencyResolver.ResolveProjectPath()
+            // to ensure the source key matches graph.SourceProjectPath used in Pass 2.
             string projectPath = Path.IsPathRooted(project.ProjectPath)
                 ? project.ProjectPath
                 : Path.GetFullPath(Path.Combine(basePath, project.ProjectPath));
-            
+
+            if (Directory.Exists(projectPath))
+            {
+                string[] projectFileExtensions = [".csproj", ".fsproj", ".vbproj"];
+                foreach (string ext in projectFileExtensions)
+                {
+                    string[] matches = Directory.GetFiles(projectPath, $"*{ext}", SearchOption.TopDirectoryOnly);
+                    if (matches.Length > 0)
+                    {
+                        projectPath = Path.GetFullPath(matches[0]);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                projectPath = Path.GetFullPath(projectPath);
+            }
+
             foreach (ExternalComponentConfiguration externalConfig in effectiveConfig.ExternalDependencies)
             {
                 LoadAndRegisterExternalBom(externalConfig, $"project:{projectPath}");
@@ -477,6 +511,26 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
                                 ResolvedPath = null,
                                 DependsOn = []
                             });
+
+                            // Register in project registry to preserve original purl, type,
+                            // and version so the Composer doesn't regenerate them as pkg:nuget/.
+                            string regName = comp.Name ?? "unknown";
+                            if (!projectRegistry.ContainsKey(regName))
+                            {
+                                projectRegistry[regName] = new ComponentConfiguration
+                                {
+                                    Name = comp.Name,
+                                    Version = comp.Version,
+                                    Purl = comp.Purl,
+                                    BomRef = comp.BomRef,
+                                    Type = comp.Type,
+                                    Description = comp.Description,
+                                    Publisher = comp.Publisher,
+                                    Copyright = comp.Copyright,
+                                    Group = comp.Group,
+                                    Scope = comp.Scope
+                                };
+                            }
                         }
 
                         addedComponents.Add(componentKey);
@@ -484,6 +538,8 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
                 }
             }
         }
+
+        // ── Pass 2a-i: Inject external dependencies into each project graph ──
 
         foreach ((DependencyGraph graph, SbomConfiguration config) in resolved)
         {
@@ -494,7 +550,69 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
             
             // Add project-specific external dependencies
             AddExternalDependenciesToGraph(graph, config.ExternalDependencies, $"project:{graph.SourceProjectPath}", includeTransitive);
+        }
 
+        // ── Pass 2a-ii: Propagate external dependencies transitively across project references ──
+        // When ProjectB has WithExternal and ProjectA references ProjectB,
+        // the external components should appear in ProjectA's SBOM as well.
+        // project.assets.json already resolves transitive project references,
+        // so a single pass is sufficient (A→B→C means A's graph has both B and C).
+
+        foreach ((DependencyGraph graph, _) in resolved)
+        {
+            HashSet<string> existing = new(StringComparer.OrdinalIgnoreCase);
+            foreach (var pkg in graph.Packages)
+                existing.Add($"{pkg.Id}/{pkg.Version}");
+            foreach (var proj in graph.ProjectReferences)
+                existing.Add($"{proj.Name}/{proj.Version}");
+
+            foreach (ResolvedProjectReference projRef in graph.ProjectReferences.ToList())
+            {
+                // Only propagate from real .NET project references (external entries have null ResolvedPath)
+                if (projRef.ResolvedPath == null)
+                    continue;
+                if (!dependencyGraphLookup.TryGetValue(projRef.ResolvedPath, out DependencyGraph? refGraph))
+                    continue;
+
+                // Copy packages from the referenced project's graph
+                foreach (ResolvedPackage pkg in refGraph.Packages)
+                {
+                    string key = $"{pkg.Id}/{pkg.Version}";
+                    if (existing.Add(key))
+                    {
+                        graph.Packages.Add(new ResolvedPackage
+                        {
+                            Id = pkg.Id,
+                            Version = pkg.Version,
+                            IsDirect = false,
+                            PackageHash = pkg.PackageHash,
+                            Nuspec = pkg.Nuspec
+                        });
+                    }
+                }
+
+                // Copy project references from the referenced project's graph
+                foreach (ResolvedProjectReference nestedRef in refGraph.ProjectReferences)
+                {
+                    string key = $"{nestedRef.Name}/{nestedRef.Version}";
+                    if (existing.Add(key))
+                    {
+                        graph.ProjectReferences.Add(new ResolvedProjectReference
+                        {
+                            Name = nestedRef.Name,
+                            Version = nestedRef.Version,
+                            ResolvedPath = nestedRef.ResolvedPath,
+                            DependsOn = nestedRef.DependsOn
+                        });
+                    }
+                }
+            }
+        }
+
+        // ── Pass 2a-iii: Compose project SBOMs ──
+
+        foreach ((DependencyGraph graph, SbomConfiguration config) in resolved)
+        {
             Composer.Composer composer = new(graph, config, basePath, projectRegistry, _tool, _component.Component);
             ComposerResult composerResult = await composer.ComposeAsync();
 
@@ -504,8 +622,9 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
 
         // ── Pass 2b: Compose custom component SBOMs ──
 
-        foreach (CustomComponentConfiguration customComp in _customComponents)
+        for (int i = 0; i < _customComponents.Count; i++)
         {
+            CustomComponentConfiguration customComp = _customComponents[i];
             // Merge global config with per-component overrides
             SbomConfiguration effectiveConfig = _component.Merge(customComp.Sbom);
 
@@ -606,7 +725,7 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
             AddExternalDependenciesToGraph(graph, _externalComponents, "global", includeTransitive);
             
             // Add custom component-specific external dependencies
-            AddExternalDependenciesToGraph(graph, customComp.ExternalDependencies, $"custom:{effectiveConfig.Component.Name ?? customComp.GetHashCode().ToString()}", includeTransitive);
+            AddExternalDependenciesToGraph(graph, customComp.ExternalDependencies, $"custom:{effectiveConfig.Component.Name ?? i.ToString()}", includeTransitive);
 
             // Compose SBOM
             Composer.Composer composer = new(graph, effectiveConfig, basePath, projectRegistry, _tool, _component.Component);

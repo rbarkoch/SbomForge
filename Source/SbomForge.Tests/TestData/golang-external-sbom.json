@@ -1,0 +1,64 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.4",
+  "serialNumber": "urn:uuid:aabbccdd-1111-2222-3333-444455556666",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-01-10T00:00:00Z",
+    "component": {
+      "type": "application",
+      "name": "github.com/example/go-service",
+      "version": "v2.3.1",
+      "bom-ref": "pkg:golang/github.com/example/go-service@v2.3.1",
+      "purl": "pkg:golang/github.com/example/go-service@v2.3.1",
+      "description": "A Go microservice"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "github.com/gorilla/mux",
+      "version": "v1.8.0",
+      "bom-ref": "pkg:golang/github.com/gorilla/mux@v1.8.0",
+      "purl": "pkg:golang/github.com/gorilla/mux@v1.8.0",
+      "description": "HTTP request multiplexer"
+    },
+    {
+      "type": "library",
+      "name": "github.com/sirupsen/logrus",
+      "version": "v1.9.3",
+      "bom-ref": "pkg:golang/github.com/sirupsen/logrus@v1.9.3",
+      "purl": "pkg:golang/github.com/sirupsen/logrus@v1.9.3",
+      "description": "Structured logger for Go"
+    },
+    {
+      "type": "library",
+      "name": "golang.org/x/net",
+      "version": "v0.17.0",
+      "bom-ref": "pkg:golang/golang.org/x/net@v0.17.0",
+      "purl": "pkg:golang/golang.org/x/net@v0.17.0"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:golang/github.com/example/go-service@v2.3.1",
+      "dependsOn": [
+        "pkg:golang/github.com/gorilla/mux@v1.8.0",
+        "pkg:golang/github.com/sirupsen/logrus@v1.9.3",
+        "pkg:golang/golang.org/x/net@v0.17.0"
+      ]
+    },
+    {
+      "ref": "pkg:golang/github.com/gorilla/mux@v1.8.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/github.com/sirupsen/logrus@v1.9.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:golang/golang.org/x/net@v0.17.0",
+      "dependsOn": []
+    }
+  ]
+}

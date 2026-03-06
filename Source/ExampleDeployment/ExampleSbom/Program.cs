@@ -16,6 +16,8 @@ await new SbomBuilder()
         {
             meta.Cpe = "cpe:2.3:a:example:exampleclasslibrary2:1.0.0:*:*:*:*:*:*:*";
         });
+
+        component.WithExternal("ExampleSbom/ExampleExternal.sbom.json");
     })
     .ForProject("ExampleConsoleApp1/ExampleConsoleApp1.csproj", component => component
         .WithComponent(c =>
