@@ -30,6 +30,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="SbomForge.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CycloneDX.Core"
                       Version="11.0.0" />
     <PackageReference Include="Nuget.ProjectModel"

@@ -1,0 +1,84 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "version": 1,
+  "metadata": {
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "group": "SbomForge",
+          "name": "SbomForge",
+          "version": "1.0.0",
+          "externalReferences": [
+            {
+              "url": "https://github.com/rbarkoch/SbomForge",
+              "type": "website"
+            }
+          ]
+        }
+      ]
+    },
+    "component": {
+      "type": "platform",
+      "bom-ref": "pkg:generic/k8s-deployment@1.0.0",
+      "name": "k8s-deployment",
+      "version": "1.0.0",
+      "purl": "pkg:generic/k8s-deployment@1.0.0",
+      "modified": false,
+      "isExternal": false
+    }
+  },
+  "components": [
+    {
+      "type": "container",
+      "bom-ref": "pkg:docker/myorg/app-container@1.0.0",
+      "name": "app-container",
+      "version": "1.0.0",
+      "description": "Production Docker container",
+      "purl": "pkg:docker/myorg/app-container@1.0.0",
+      "modified": false,
+      "isExternal": false
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/kubernetes@1.28",
+      "name": "kubernetes",
+      "version": "1.28",
+      "scope": "excluded",
+      "purl": "pkg:generic/kubernetes@1.28",
+      "modified": false,
+      "isExternal": false
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:npm/myorg/web-frontend@2.1.0",
+      "name": "web-frontend",
+      "version": "2.1.0",
+      "purl": "pkg:npm/myorg/web-frontend@2.1.0",
+      "modified": false,
+      "isExternal": false
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:docker/myorg/app-container@1.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:generic/k8s-deployment@1.0.0",
+      "dependsOn": [
+        "pkg:docker/myorg/app-container@1.0.0",
+        "pkg:npm/myorg/web-frontend@2.1.0"
+      ]
+    },
+    {
+      "ref": "pkg:generic/kubernetes@1.28",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:npm/myorg/web-frontend@2.1.0",
+      "dependsOn": []
+    }
+  ]
+}

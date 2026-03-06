@@ -13,4 +13,12 @@ public class SbomBuildResult
 
     /// <summary>Generated BOMs keyed by project name.</summary>
     public Dictionary<string, Bom> Boms { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Non-fatal issues detected during SBOM generation.
+    /// These indicate potentially incomplete or degraded SBOM output
+    /// (e.g. missing nuspec metadata, unresolvable project references,
+    /// or structural validation issues in the generated SBOMs).
+    /// </summary>
+    public List<string> Warnings { get; } = [];
 }

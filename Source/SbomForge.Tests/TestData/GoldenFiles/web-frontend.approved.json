@@ -1,0 +1,55 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "version": 1,
+  "metadata": {
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "group": "SbomForge",
+          "name": "SbomForge",
+          "version": "1.0.0",
+          "externalReferences": [
+            {
+              "url": "https://github.com/rbarkoch/SbomForge",
+              "type": "website"
+            }
+          ]
+        }
+      ]
+    },
+    "component": {
+      "type": "application",
+      "bom-ref": "pkg:npm/myorg/web-frontend@2.1.0",
+      "name": "web-frontend",
+      "version": "2.1.0",
+      "purl": "pkg:npm/myorg/web-frontend@2.1.0",
+      "modified": false,
+      "isExternal": false
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/react@18.2.0",
+      "name": "react",
+      "version": "18.2.0",
+      "purl": "pkg:npm/react@18.2.0",
+      "modified": false,
+      "isExternal": false
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:npm/myorg/web-frontend@2.1.0",
+      "dependsOn": [
+        "pkg:npm/react@18.2.0"
+      ]
+    },
+    {
+      "ref": "pkg:npm/react@18.2.0",
+      "dependsOn": []
+    }
+  ]
+}

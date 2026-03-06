@@ -129,6 +129,7 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
     {
         string basePath = _basePath ?? Directory.GetCurrentDirectory();
         SbomBuildResult result = new();
+        List<string> warnings = result.Warnings;
 
         // ── Pass 1: Resolve all projects, read metadata, build registry ──
 
@@ -153,6 +154,10 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
             if (metadata is not null)
             {
                 ApplyProjectDefaults(effectiveConfig.Component, metadata, projectPath);
+            }
+            else
+            {
+                warnings.Add($"Could not read metadata from project file '{projectPath}'; using configured/default values.");
             }
 
             // Resolve dependencies.
@@ -490,6 +495,10 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
                         {
                             // Attempt to locate and parse the .nuspec file from the global NuGet packages cache.
                             Nuspec? nuspec = TryReadNuspecFromGlobalPackages(comp.Name, comp.Version);
+                            if (nuspec is null)
+                            {
+                                warnings.Add($"Could not read nuspec for external NuGet package '{comp.Name}@{comp.Version}' from global cache; license and description metadata may be missing.");
+                            }
 
                             // Add as a package
                             graph.Packages.Add(new ResolvedPackage
@@ -613,7 +622,7 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
 
         foreach ((DependencyGraph graph, SbomConfiguration config) in resolved)
         {
-            Composer.Composer composer = new(graph, config, basePath, projectRegistry, _tool, _component.Component);
+            Composer.Composer composer = new(graph, config, basePath, projectRegistry, _tool, _component.Component, warnings);
             ComposerResult composerResult = await composer.ComposeAsync();
 
             result.WrittenFilePaths.Add(composerResult.OutputPath);
@@ -728,7 +737,7 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
             AddExternalDependenciesToGraph(graph, customComp.ExternalDependencies, $"custom:{effectiveConfig.Component.Name ?? i.ToString()}", includeTransitive);
 
             // Compose SBOM
-            Composer.Composer composer = new(graph, effectiveConfig, basePath, projectRegistry, _tool, _component.Component);
+            Composer.Composer composer = new(graph, effectiveConfig, basePath, projectRegistry, _tool, _component.Component, warnings);
             ComposerResult composerResult = await composer.ComposeAsync();
 
             result.WrittenFilePaths.Add(composerResult.OutputPath);

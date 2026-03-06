@@ -4,6 +4,7 @@ using CycloneDX.Models;
 using SbomForge.Configuration;
 using SbomForge.Resolver;
 using SbomForge.Utilities;
+using SbomForge.Validation;
 
 namespace SbomForge.Composer;
 
@@ -22,6 +23,7 @@ internal class Composer
     private readonly IReadOnlyDictionary<string, ComponentConfiguration> _projectRegistry;
     private readonly ComponentConfiguration _tool;
     private readonly ComponentConfiguration? _globalMetadata;
+    private readonly List<string> _warnings;
 
     public Composer(
         DependencyGraph graph,
@@ -29,7 +31,8 @@ internal class Composer
         string basePath,
         IReadOnlyDictionary<string, ComponentConfiguration> projectRegistry,
         ComponentConfiguration tool,
-        ComponentConfiguration? globalMetadata = null)
+        ComponentConfiguration? globalMetadata = null,
+        List<string>? warnings = null)
     {
         _graph = graph;
         _config = config;
@@ -37,6 +40,7 @@ internal class Composer
         _projectRegistry = projectRegistry;
         _tool = tool;
         _globalMetadata = globalMetadata;
+        _warnings = warnings ?? [];
     }
 
     /// <summary>
@@ -46,6 +50,11 @@ internal class Composer
     {
         DependencyGraph filtered = ApplyFilters(_graph, _config.Filters);
         Bom bom = BuildBom(filtered, _config);
+
+        // Structural validation before serialization.
+        List<string> validationErrors = SbomValidator.Validate(bom);
+        _warnings.AddRange(validationErrors);
+
         string outputPath = await SerializeAndWriteAsync(bom, _config.Output, filtered.ProjectName, _basePath);
 
         return new ComposerResult { Bom = bom, OutputPath = outputPath };
@@ -329,7 +338,12 @@ internal class Composer
 
     // ───────────────────────────── Package Components ────────────────────────────
 
-    private static Component BuildPackageComponent(ResolvedPackage pkg)
+    private Component BuildPackageComponent(ResolvedPackage pkg)
+    {
+        return BuildPackageComponent(pkg, _warnings);
+    }
+
+    private static Component BuildPackageComponent(ResolvedPackage pkg, List<string>? warnings)
     {
         string purl = $"pkg:nuget/{pkg.Id}@{pkg.Version}";
 
@@ -348,12 +362,17 @@ internal class Composer
         // Hashes – NuGet stores SHA-512 as Base64; CycloneDX requires hex encoding.
         if (!string.IsNullOrEmpty(pkg.PackageHash))
         {
+            string hex = ConvertBase64ToHex(pkg.PackageHash);
+            if (hex.Length != 128)
+            {
+                warnings?.Add($"Package '{pkg.Id}@{pkg.Version}' has unexpected SHA-512 hash length ({hex.Length} hex chars, expected 128).");
+            }
             component.Hashes =
             [
                 new Hash
                 {
                     Alg = Hash.HashAlgorithm.SHA_512,
-                    Content = ConvertBase64ToHex(pkg.PackageHash)
+                    Content = hex
                 }
             ];
         }
@@ -381,9 +400,20 @@ internal class Composer
 
                 if(!string.IsNullOrWhiteSpace(meta.License?.Type))
                 {
-                    component.Licenses = [new LicenseChoice() {
-                        Expression = meta.License!.Text
-                    }];
+                    if (string.Equals(meta.License!.Type, "expression", StringComparison.OrdinalIgnoreCase))
+                    {
+                        component.Licenses = [new LicenseChoice() {
+                            Expression = meta.License.Text
+                        }];
+                    }
+                    else
+                    {
+                        // type="file" — cannot be mapped to a SPDX expression;
+                        // record it as a named license instead.
+                        component.Licenses = [new LicenseChoice() {
+                            License = new CycloneDX.Models.License { Name = meta.License.Text }
+                        }];
+                    }
                 }
 
                 if (!string.IsNullOrWhiteSpace(meta.ProjectUrl))
@@ -459,6 +489,14 @@ internal class Composer
                     ? Component.Classification.Application
                     : Component.Classification.Library;
             }
+            else
+            {
+                _warnings.Add($"Could not read metadata from project reference '{projRef.ResolvedPath}'; using defaults.");
+            }
+        }
+        else if (projRef.ResolvedPath is not null)
+        {
+            _warnings.Add($"Project reference path does not exist: '{projRef.ResolvedPath}'; using defaults for '{projRef.Name}'.");
         }
 
         // Apply global metadata overrides when configured.
