@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.7",
-  "serialNumber": "urn:uuid:a49694aa-ae88-458e-aeba-231f0fb59396",
+  "serialNumber": "urn:uuid:de00cf0a-b2fc-4681-93bf-7dfa6a1a49f2",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-03-06T01:28:21Z",
+    "timestamp": "2026-03-06T01:48:59Z",
     "tools": {
       "components": [
         {
@@ -48,6 +48,10 @@
       "dependsOn": [
         "pkg:npm/react@18.2.0"
       ]
+    },
+    {
+      "ref": "pkg:npm/react@18.2.0",
+      "dependsOn": []
     }
   ]
 }

@@ -255,6 +255,21 @@ internal class Composer
             bom.Dependencies.Add(dep);
         }
 
+        // ── Custom component dependency nodes ──
+
+        foreach (ComponentConfiguration customComp in config.CustomComponents)
+        {
+            string? bomRef = customComp.BomRef ?? customComp.Purl;
+            if (string.IsNullOrEmpty(bomRef))
+                continue;
+
+            bom.Dependencies.Add(new Dependency
+            {
+                Ref = bomRef,
+                Dependencies = []
+            });
+        }
+
         return bom;
     }
 

@@ -442,6 +442,156 @@ public sealed class CustomComponentTests
 
     #endregion
 
+    #region Custom Component Dependency Entry Tests
+
+    [TestMethod]
+    public async Task CustomComponent_WithComponents_AllHaveDependencyEntries()
+    {
+        // Arrange & Act
+        var result = await new SbomBuilder()
+            .WithBasePath(_testBasePath)
+            .WithOutput(o => o.OutputDirectory = _outputDirectory)
+            .ForComponent(comp => comp
+                .WithMetadata(m =>
+                {
+                    m.Name = "web-app";
+                    m.Version = "2.0.0";
+                    m.Type = Component.Classification.Application;
+                    m.BomRef = "pkg:generic/web-app@2.0.0";
+                    m.Purl = "pkg:generic/web-app@2.0.0";
+                })
+                .WithComponent(c =>
+                {
+                    c.Name = "react";
+                    c.Version = "18.2.0";
+                    c.Purl = "pkg:npm/react@18.2.0";
+                    c.BomRef = "pkg:npm/react@18.2.0";
+                    c.Type = Component.Classification.Library;
+                })
+                .WithComponent(c =>
+                {
+                    c.Name = "redis";
+                    c.Version = "7.2";
+                    c.Purl = "pkg:docker/redis@7.2";
+                    c.BomRef = "pkg:docker/redis@7.2";
+                    c.Type = Component.Classification.Container;
+                }))
+            .BuildAsync();
+
+        // Assert - every component must have a ref entry in dependencies
+        var bom = result.Boms["web-app"];
+
+        var depRefs = bom.Dependencies!
+            .Select(d => d.Ref)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var allBomRefs = bom.Components!
+            .Select(c => c.BomRef)
+            .Where(b => !string.IsNullOrEmpty(b))
+            .ToList();
+
+        foreach (var bomRef in allBomRefs)
+        {
+            Assert.IsTrue(depRefs.Contains(bomRef!),
+                $"Component with bom-ref '{bomRef}' must have a corresponding entry in the dependencies array");
+        }
+    }
+
+    [TestMethod]
+    public async Task ForProject_WithComponents_AllHaveDependencyEntries()
+    {
+        // Arrange & Act
+        var result = await new SbomBuilder()
+            .WithBasePath(_testBasePath)
+            .WithOutput(o => o.OutputDirectory = _outputDirectory)
+            .ForProject("ExampleConsoleApp1/ExampleConsoleApp1.csproj", component => component
+                .WithComponent(c =>
+                {
+                    c.Name = "redis";
+                    c.Version = "7.2";
+                    c.Purl = "pkg:docker/redis@7.2";
+                    c.BomRef = "pkg:docker/redis@7.2";
+                    c.Type = Component.Classification.Container;
+                })
+                .WithComponent(c =>
+                {
+                    c.Name = "react";
+                    c.Version = "18.2.0";
+                    c.Purl = "pkg:npm/react@18.2.0";
+                    c.BomRef = "pkg:npm/react@18.2.0";
+                    c.Type = Component.Classification.Library;
+                }))
+            .BuildAsync();
+
+        // Assert - every component must have a ref in the dependencies array
+        var bom = result.Boms["ExampleConsoleApp1"];
+
+        var depRefs = bom.Dependencies!
+            .Select(d => d.Ref)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var allBomRefs = bom.Components!
+            .Select(c => c.BomRef)
+            .Where(b => !string.IsNullOrEmpty(b))
+            .ToList();
+
+        foreach (var bomRef in allBomRefs)
+        {
+            Assert.IsTrue(depRefs.Contains(bomRef!),
+                $"Component with bom-ref '{bomRef}' must have a corresponding entry in the dependencies array");
+        }
+    }
+
+    [TestMethod]
+    public async Task CustomComponent_ExcludedScopeComponent_StillHasDependencyEntry()
+    {
+        // Arrange & Act
+        var result = await new SbomBuilder()
+            .WithBasePath(_testBasePath)
+            .WithOutput(o => o.OutputDirectory = _outputDirectory)
+            .ForComponent(comp => comp
+                .WithMetadata(m =>
+                {
+                    m.Name = "k8s-deployment";
+                    m.Version = "1.0.0";
+                    m.Type = Component.Classification.Platform;
+                    m.BomRef = "pkg:generic/k8s-deployment@1.0.0";
+                    m.Purl = "pkg:generic/k8s-deployment@1.0.0";
+                })
+                .WithComponent(c =>
+                {
+                    c.Name = "kubernetes";
+                    c.Version = "1.28";
+                    c.Purl = "pkg:generic/kubernetes@1.28";
+                    c.BomRef = "pkg:generic/kubernetes@1.28";
+                    c.Scope = Component.ComponentScope.Excluded;
+                }))
+            .BuildAsync();
+
+        // Assert - excluded-scope components must still have a dependency entry
+        var bom = result.Boms["k8s-deployment"];
+
+        var depRefs = bom.Dependencies!
+            .Select(d => d.Ref)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        Assert.IsTrue(depRefs.Contains("pkg:generic/kubernetes@1.28"),
+            "Excluded-scope custom component must still have a dependency entry in the dependencies array");
+
+        // It should NOT appear in the root's dependsOn list (excluded scope)
+        var rootDep = bom.Dependencies!
+            .First(d => d.Ref == "pkg:generic/k8s-deployment@1.0.0");
+
+        var rootDependsOnRefs = rootDep.Dependencies?
+            .Select(d => d.Ref)
+            .ToList() ?? [];
+
+        Assert.IsFalse(rootDependsOnRefs.Contains("pkg:generic/kubernetes@1.28"),
+            "Excluded-scope component should not be listed in root's dependsOn");
+    }
+
+    #endregion
+
     #region Custom Component File Output Tests
 
     [TestMethod]
