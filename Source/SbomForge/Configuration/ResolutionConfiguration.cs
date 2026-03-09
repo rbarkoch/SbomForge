@@ -21,4 +21,12 @@ public class ResolutionConfiguration
     /// Null means inherit from parent configuration; defaults to true if not set anywhere.
     /// </summary>
     public bool? UseGlobalMetadataForProjectReferences { get; set; }
+
+    /// <summary>
+    /// When true, disables walking up the directory tree to resolve
+    /// <c>Directory.Build.props</c> files for metadata discovery.
+    /// Only the project file itself will be used for auto-detected metadata.
+    /// Null means inherit from parent configuration; defaults to false if not set anywhere.
+    /// </summary>
+    public bool? DisableDirectoryBuildPropsResolution { get; set; }
 }

@@ -480,7 +480,8 @@ internal class Composer
 
         if (projRef.ResolvedPath is not null && File.Exists(projRef.ResolvedPath))
         {
-            ProjectMetadata? meta = ProjectMetadataReader.Read(projRef.ResolvedPath);
+            bool skipBuildProps = _config.Resolution.DisableDirectoryBuildPropsResolution ?? false;
+            ProjectMetadata? meta = ProjectMetadataReader.Read(projRef.ResolvedPath, skipBuildProps);
             if (meta is not null)
             {
                 fallbackName = meta.AssemblyName ?? projRef.Name;

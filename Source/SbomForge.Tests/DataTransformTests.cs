@@ -242,6 +242,61 @@ public sealed class DataTransformTests
         Assert.IsNotNull(bom.Metadata!.Component!.Copyright, "Copyright should be set");
     }
 
+    [TestMethod]
+    public async Task DisableDirectoryBuildPropsResolution_SkipsBuildPropsMetadata()
+    {
+        var basePath = GetTestBasePath();
+        string outputDir = GetTempOutputDir();
+
+        // ExampleClassLibrary2 inherits Company and Copyright from Directory.Build.props.
+        // With the flag disabled, those should NOT be auto-detected.
+        var result = await new SbomBuilder()
+            .WithBasePath(basePath)
+            .WithResolution(r => r.DisableDirectoryBuildPropsResolution = true)
+            .WithOutput(o => o.OutputDirectory = outputDir)
+            .ForProject("ExampleClassLibrary2/ExampleClassLibrary2.csproj")
+            .BuildAsync();
+
+        var bom = result.Boms["ExampleClassLibrary2"];
+
+        // Copyright comes only from Directory.Build.props for this project,
+        // so it should be absent when resolution is disabled.
+        Assert.IsNull(bom.Metadata!.Component!.Copyright,
+            "Copyright should be null when Directory.Build.props resolution is disabled");
+
+        // Supplier (derived from Company in Directory.Build.props) should also be absent.
+        Assert.IsNull(bom.Metadata.Component.Supplier,
+            "Supplier should be null when Directory.Build.props resolution is disabled");
+
+        // Properties declared in the .csproj itself should still be present.
+        Assert.AreEqual("1.2.3", bom.Metadata.Component.Version,
+            "Version from .csproj should still be detected");
+        Assert.AreEqual("Example class library for SBOM testing", bom.Metadata.Component.Description,
+            "Description from .csproj should still be detected");
+    }
+
+    [TestMethod]
+    public async Task DisableDirectoryBuildPropsResolution_DefaultBehaviorIncludesBuildProps()
+    {
+        var basePath = GetTestBasePath();
+        string outputDir = GetTempOutputDir();
+
+        // Without the flag, Directory.Build.props metadata should be present.
+        var result = await new SbomBuilder()
+            .WithBasePath(basePath)
+            .WithOutput(o => o.OutputDirectory = outputDir)
+            .ForProject("ExampleClassLibrary2/ExampleClassLibrary2.csproj")
+            .BuildAsync();
+
+        var bom = result.Boms["ExampleClassLibrary2"];
+
+        // Copyright and Company come from Directory.Build.props.
+        Assert.IsNotNull(bom.Metadata!.Component!.Copyright,
+            "Copyright should be set from Directory.Build.props by default");
+        Assert.IsNotNull(bom.Metadata.Component.Supplier,
+            "Supplier (from Company) should be set from Directory.Build.props by default");
+    }
+
     #endregion
 
     #region Hash Integrity

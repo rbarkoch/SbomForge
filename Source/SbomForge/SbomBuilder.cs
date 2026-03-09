@@ -150,7 +150,8 @@ public class SbomBuilder : BuilderBase<SbomBuilder>
                 : Path.GetFullPath(Path.Combine(basePath, project.ProjectPath));
 
             // Auto-detect metadata from .csproj + Directory.Build.props.
-            ProjectMetadata? metadata = ProjectMetadataReader.Read(projectPath);
+            bool skipBuildProps = effectiveConfig.Resolution.DisableDirectoryBuildPropsResolution ?? false;
+            ProjectMetadata? metadata = ProjectMetadataReader.Read(projectPath, skipBuildProps);
             if (metadata is not null)
             {
                 ApplyProjectDefaults(effectiveConfig.Component, metadata, projectPath);

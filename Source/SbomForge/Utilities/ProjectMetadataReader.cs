@@ -23,7 +23,12 @@ internal static class ProjectMetadataReader
     /// <c>Directory.Build.props</c> hierarchy (walking parent directories).
     /// Returns <c>null</c> if the project file cannot be read.
     /// </summary>
-    public static ProjectMetadata? Read(string projectPath)
+    /// <param name="projectPath">Absolute or relative path to the .csproj / .fsproj / .vbproj file.</param>
+    /// <param name="skipDirectoryBuildProps">
+    /// When <c>true</c>, the reader will not walk parent directories to merge
+    /// <c>Directory.Build.props</c> files. Only the project file itself is used.
+    /// </param>
+    public static ProjectMetadata? Read(string projectPath, bool skipDirectoryBuildProps = false)
     {
         if (!File.Exists(projectPath))
             return null;
@@ -36,10 +41,13 @@ internal static class ProjectMetadataReader
             // Walk parent directories for Directory.Build.props files.
             // Inner (closer) files have already been read, so we only fill
             // properties that haven't been set yet.
-            string? projectDir = Path.GetDirectoryName(Path.GetFullPath(projectPath));
-            if (projectDir is not null)
+            if (!skipDirectoryBuildProps)
             {
-                MergeDirectoryBuildProps(projectDir, properties);
+                string? projectDir = Path.GetDirectoryName(Path.GetFullPath(projectPath));
+                if (projectDir is not null)
+                {
+                    MergeDirectoryBuildProps(projectDir, properties);
+                }
             }
 
             string? outputType = GetValue(properties, "OutputType");

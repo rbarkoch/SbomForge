@@ -31,7 +31,8 @@ internal static class Extensions
         {
             IncludeTransitive = resolution.IncludeTransitive,
             TargetFramework = resolution.TargetFramework,
-            UseGlobalMetadataForProjectReferences = resolution.UseGlobalMetadataForProjectReferences
+            UseGlobalMetadataForProjectReferences = resolution.UseGlobalMetadataForProjectReferences,
+            DisableDirectoryBuildPropsResolution = resolution.DisableDirectoryBuildPropsResolution
         };
 
         foreach(ResolutionConfiguration config in other)
@@ -48,6 +49,10 @@ internal static class Extensions
             if (config.UseGlobalMetadataForProjectReferences.HasValue)
             {
                 merged.UseGlobalMetadataForProjectReferences = config.UseGlobalMetadataForProjectReferences;
+            }
+            if (config.DisableDirectoryBuildPropsResolution.HasValue)
+            {
+                merged.DisableDirectoryBuildPropsResolution = config.DisableDirectoryBuildPropsResolution;
             }
         }
 
