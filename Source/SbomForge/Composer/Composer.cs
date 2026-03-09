@@ -480,7 +480,7 @@ internal class Composer
 
         if (projRef.ResolvedPath is not null && File.Exists(projRef.ResolvedPath))
         {
-            bool skipBuildProps = _config.Resolution.DisableDirectoryBuildPropsResolution ?? false;
+            bool skipBuildProps = !(_config.Resolution.ResolveDirectoryBuildProps ?? true);
             ProjectMetadata? meta = ProjectMetadataReader.Read(projRef.ResolvedPath, skipBuildProps);
             if (meta is not null)
             {

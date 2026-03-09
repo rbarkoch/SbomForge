@@ -243,16 +243,16 @@ public sealed class DataTransformTests
     }
 
     [TestMethod]
-    public async Task DisableDirectoryBuildPropsResolution_SkipsBuildPropsMetadata()
+    public async Task ResolveDirectoryBuildProps_FalseSkipsBuildPropsMetadata()
     {
         var basePath = GetTestBasePath();
         string outputDir = GetTempOutputDir();
 
         // ExampleClassLibrary2 inherits Company and Copyright from Directory.Build.props.
-        // With the flag disabled, those should NOT be auto-detected.
+        // With resolution set to false, those should NOT be auto-detected.
         var result = await new SbomBuilder()
             .WithBasePath(basePath)
-            .WithResolution(r => r.DisableDirectoryBuildPropsResolution = true)
+            .WithResolution(r => r.ResolveDirectoryBuildProps = false)
             .WithOutput(o => o.OutputDirectory = outputDir)
             .ForProject("ExampleClassLibrary2/ExampleClassLibrary2.csproj")
             .BuildAsync();
@@ -262,11 +262,11 @@ public sealed class DataTransformTests
         // Copyright comes only from Directory.Build.props for this project,
         // so it should be absent when resolution is disabled.
         Assert.IsNull(bom.Metadata!.Component!.Copyright,
-            "Copyright should be null when Directory.Build.props resolution is disabled");
+            "Copyright should be null when ResolveDirectoryBuildProps is false");
 
         // Supplier (derived from Company in Directory.Build.props) should also be absent.
         Assert.IsNull(bom.Metadata.Component.Supplier,
-            "Supplier should be null when Directory.Build.props resolution is disabled");
+            "Supplier should be null when ResolveDirectoryBuildProps is false");
 
         // Properties declared in the .csproj itself should still be present.
         Assert.AreEqual("1.2.3", bom.Metadata.Component.Version,
@@ -276,12 +276,12 @@ public sealed class DataTransformTests
     }
 
     [TestMethod]
-    public async Task DisableDirectoryBuildPropsResolution_DefaultBehaviorIncludesBuildProps()
+    public async Task ResolveDirectoryBuildProps_DefaultBehaviorIncludesBuildProps()
     {
         var basePath = GetTestBasePath();
         string outputDir = GetTempOutputDir();
 
-        // Without the flag, Directory.Build.props metadata should be present.
+        // Without the flag (defaults to true), Directory.Build.props metadata should be present.
         var result = await new SbomBuilder()
             .WithBasePath(basePath)
             .WithOutput(o => o.OutputDirectory = outputDir)
