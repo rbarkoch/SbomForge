@@ -1,4 +1,5 @@
 using CycloneDX.Models;
+using SbomForge.Resolver;
 using SbomForge;
 
 namespace SbomForge.Tests;
@@ -270,6 +271,60 @@ public sealed class ExternalDependencyTests
     }
 
     #endregion
+
+        #region Nuspec Parsing Tests
+
+        [TestMethod]
+        public void Nuspec_FromFile_ParsesKnownSchemaNamespaces()
+        {
+                string[] schemaNamespaces =
+                [
+                        "http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd",
+                        "http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd",
+                        "http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd"
+                ];
+
+                foreach (string schemaNamespace in schemaNamespaces)
+                {
+                        string xml = $$"""
+                                <?xml version="1.0" encoding="utf-8"?>
+                                <package xmlns="{{schemaNamespace}}" minClientVersion="2.12">
+                                    <metadata>
+                                        <id>Example.Package</id>
+                                        <version>1.2.3</version>
+                                        <authors>Example Author</authors>
+                                        <description>Example description</description>
+                                        <projectUrl>https://example.test/package</projectUrl>
+                                        <license type="expression">MIT</license>
+                                        <repository type="git" url="https://example.test/repo.git" branch="main" commit="abc123" />
+                                    </metadata>
+                                </package>
+                                """;
+
+                        using MemoryStream stream = new(System.Text.Encoding.UTF8.GetBytes(xml));
+
+                        Nuspec? nuspec = Nuspec.FromFile(stream);
+
+                        Assert.IsNotNull(nuspec, schemaNamespace);
+                        Assert.AreEqual("2.12", nuspec.MinClientVersion, schemaNamespace);
+                        Assert.IsNotNull(nuspec.Metadata, schemaNamespace);
+                        Assert.AreEqual("Example.Package", nuspec.Metadata.Id, schemaNamespace);
+                        Assert.AreEqual("1.2.3", nuspec.Metadata.Version, schemaNamespace);
+                        Assert.AreEqual("Example Author", nuspec.Metadata.Authors, schemaNamespace);
+                        Assert.AreEqual("Example description", nuspec.Metadata.Description, schemaNamespace);
+                        Assert.AreEqual("https://example.test/package", nuspec.Metadata.ProjectUrl, schemaNamespace);
+                        Assert.IsNotNull(nuspec.Metadata.License, schemaNamespace);
+                        Assert.AreEqual("expression", nuspec.Metadata.License.Type, schemaNamespace);
+                        Assert.AreEqual("MIT", nuspec.Metadata.License.Text, schemaNamespace);
+                        Assert.IsNotNull(nuspec.Metadata.Repository, schemaNamespace);
+                        Assert.AreEqual("git", nuspec.Metadata.Repository.Type, schemaNamespace);
+                        Assert.AreEqual("https://example.test/repo.git", nuspec.Metadata.Repository.Url, schemaNamespace);
+                        Assert.AreEqual("main", nuspec.Metadata.Repository.Branch, schemaNamespace);
+                        Assert.AreEqual("abc123", nuspec.Metadata.Repository.Commit, schemaNamespace);
+                }
+        }
+
+        #endregion
 
     #region Regression Tests (Bug Fixes)
 

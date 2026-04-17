@@ -1,16 +1,19 @@
-using System;
-using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
-using System.IO.Compression;
-using System.Linq;
+using System.Xml;
+using System.Xml.Linq;
 using System.Xml.Serialization;
-using NuGet.Packaging.Core;
 
 namespace SbomForge.Resolver;
 
-[XmlRoot("package", Namespace = "http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd")]
-internal class Nuspec
+#pragma warning disable CS1591
+
+[EditorBrowsable(EditorBrowsableState.Never)]
+[XmlRoot("package")]
+public class Nuspec
 {
+    private static readonly XmlSerializer _serializer = new(typeof(Nuspec));
+
     [XmlElement("metadata")]
     public Metadata? Metadata { get; set; }
 
@@ -19,12 +22,45 @@ internal class Nuspec
 
     public static Nuspec? FromFile(Stream stream)
     {
-        var serializer = new XmlSerializer(typeof(Nuspec));
-        return (Nuspec?)serializer.Deserialize(stream);
+        XDocument normalized = RemoveNamespaces(XDocument.Load(stream));
+        using XmlReader reader = normalized.CreateReader();
+        return (Nuspec?)_serializer.Deserialize(reader);
+    }
+
+    private static XDocument RemoveNamespaces(XDocument document)
+    {
+        return new XDocument(document.Declaration, document.Root is null ? null : RemoveNamespaces(document.Root));
+    }
+
+    private static XElement RemoveNamespaces(XElement element)
+    {
+        object[] content =
+        [
+            .. element.Attributes()
+                .Where(static attribute => !attribute.IsNamespaceDeclaration)
+                .Select(static attribute => new XAttribute(attribute.Name.LocalName, attribute.Value)),
+            .. element.Nodes().Select(RemoveNamespaces)
+        ];
+
+        return new XElement(element.Name.LocalName, content);
+    }
+
+    private static XNode RemoveNamespaces(XNode node)
+    {
+        return node switch
+        {
+            XElement element => RemoveNamespaces(element),
+            XCData cdata => new XCData(cdata.Value),
+            XText text => new XText(text.Value),
+            XComment comment => new XComment(comment.Value),
+            XProcessingInstruction instruction => new XProcessingInstruction(instruction.Target, instruction.Data),
+            _ => node
+        };
     }
 }
 
-internal class Metadata
+[EditorBrowsable(EditorBrowsableState.Never)]
+public class Metadata
 {
     // Required elements
     [XmlElement("id")]
@@ -86,7 +122,8 @@ internal class Metadata
     public string? Title { get; set; }
 }
 
-internal class License
+[EditorBrowsable(EditorBrowsableState.Never)]
+public class License
 {
     [XmlAttribute("type")]
     public string? Type { get; set; } // Possible values: 'expression', 'file'
@@ -95,7 +132,8 @@ internal class License
     public string? Text { get; set; }
 }
 
-internal class Repository
+[EditorBrowsable(EditorBrowsableState.Never)]
+public class Repository
 {
     [XmlAttribute("type")]
     public string? Type { get; set; } // e.g., git, tfs, svn
@@ -109,5 +147,7 @@ internal class Repository
     [XmlAttribute("commit")]
     public string? Commit { get; set; }
 }
+
+#pragma warning restore CS1591
 
 

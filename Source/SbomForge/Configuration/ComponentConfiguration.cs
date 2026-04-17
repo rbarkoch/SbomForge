@@ -10,9 +10,16 @@ namespace SbomForge.Configuration;
 /// </summary>
 public class ComponentConfiguration : Component
 {
+    private static readonly HashSet<string> _ignoredComponentProperties = new(StringComparer.Ordinal)
+    {
+        "LicensesSerialized",
+        "NonNullableScope"
+    };
+
     private static readonly PropertyInfo[] _componentProperties =
         typeof(Component).GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Where(p => p.CanRead && p.CanWrite)
+            .Where(p => !_ignoredComponentProperties.Contains(p.Name))
             .ToArray();
 
     /// <summary>
