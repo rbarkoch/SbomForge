@@ -360,9 +360,12 @@ internal class Composer
         };
 
         // Hashes – NuGet stores SHA-512 as Base64; CycloneDX requires hex encoding.
-        if (!string.IsNullOrEmpty(pkg.PackageHash))
+        // Remark: Need to check if packageHash here is string to avoid
+        // nullability warnings in .NET Framework 4.8 where the IsNullOrEmpty
+        // doesn't satisfy it.
+        if (pkg.PackageHash is string packageHash && !string.IsNullOrEmpty(packageHash))
         {
-            string hex = ConvertBase64ToHex(pkg.PackageHash);
+            string hex = ConvertBase64ToHex(packageHash);
             if (hex.Length != 128)
             {
                 warnings?.Add($"Package '{pkg.Id}@{pkg.Version}' has unexpected SHA-512 hash length ({hex.Length} hex chars, expected 128).");

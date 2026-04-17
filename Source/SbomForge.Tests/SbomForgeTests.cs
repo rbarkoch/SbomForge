@@ -819,7 +819,7 @@ public sealed class SbomForgeTests
             "Written JSON should contain specVersion 1.7");
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(SpecificationVersion.v1_4, "1.4")]
     [DataRow(SpecificationVersion.v1_5, "1.5")]
     [DataRow(SpecificationVersion.v1_6, "1.6")]
